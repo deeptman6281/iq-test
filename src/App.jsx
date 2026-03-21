@@ -47,12 +47,10 @@ function getIQLabel(iq) {
 }
 
 function generateCertID() {
-  return "NM-" + Math.random().toString(36).substring(2,5).toUpperCase() +
-         Math.random().toString(36).substring(2,5).toUpperCase() +
-         "FQD-USRK";
+  return "NM-" + Math.random().toString(36).substring(2, 5).toUpperCase() +
+    Math.random().toString(36).substring(2, 5).toUpperCase() + "FQD-USRK";
 }
 
-// ─── Load image as data URL via canvas ───────────────────
 function loadImageAsDataURL(url) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -61,86 +59,103 @@ function loadImageAsDataURL(url) {
       const c = document.createElement("canvas");
       c.width = img.width; c.height = img.height;
       c.getContext("2d").drawImage(img, 0, 0);
-      resolve({ dataURL: c.toDataURL("image/png"), w: img.width, h: img.height });
+      resolve(c.toDataURL("image/png"));
     };
     img.onerror = () => resolve(null);
-    img.src = url + "?v=" + Date.now(); // bust cache
+    img.src = url + "?t=" + Date.now();
   });
 }
 
-// ─── Main PDF generator ───────────────────────────────────
-// All positions are in mm for A4 landscape (297 x 210 mm)
-// Adjust the values below to fine-tune text placement on your cert.png
+// ─────────────────────────────────────────────────────────
+//  POSITION REFERENCE (A4 landscape = 297 × 210 mm)
+//
+//  Adjust these constants if text drifts after deploy.
+//  Tweak ONE value at a time, commit, re-download & check.
+// ─────────────────────────────────────────────────────────
+const POS = {
+  // Name — on the dotted line, above "has successfully completed"
+  nameY: 88,           // mm from top  (was 103 → moved up)
+  nameX: 148,          // centre of page
+
+  // IQ Number — large gold number inside the score box
+  iqNumX: 63,          // centre of score box  (was 57)
+  iqNumY: 119,         // mm from top          (was 126)
+
+  // IQ Classification label — just below the number
+  iqLabelX: 63,
+  iqLabelY: 131,       // (was 136)
+
+  // Cognitive profile % column
+  // Each value is right-aligned just before the printed "%" on the template
+  pctX: 231,           // right-align anchor   (was 243)
+  pctStartY: 117,      // y of first row       (was 121)
+  pctGap: 11.5,        // mm between rows      (was 10.2)
+
+  // Date — after "Date:" printed on template
+  dateX: 272,          // right-align anchor
+  dateY: 170,          // (was 173)
+
+  // Certificate ID — after "Certificate ID:" on template
+  certIDX: 272,
+  certIDY: 178,        // (was 180)
+};
+
 async function generateVectorPDF(name, iq, label, certID, date, catScores) {
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297, H = 210;
 
-  // ── 1. Load cert.png background ─────────────────────────
-  const bg = await loadImageAsDataURL("/cert.png");
-  if (bg) {
-    pdf.addImage(bg.dataURL, "PNG", 0, 0, W, H);
+  // 1 ── Background cert image ──────────────────────────────
+  const bgData = await loadImageAsDataURL("/cert.png");
+  if (bgData) {
+    pdf.addImage(bgData, "PNG", 0, 0, W, H);
   }
 
-  // ── 2. Candidate Name ────────────────────────────────────
-  // Positioned on the dotted line in the middle of the certificate
+  // 2 ── Candidate Name ──────────────────────────────────────
   pdf.setFont("times", "bold");
-  pdf.setFontSize(28);
-  pdf.setTextColor(26, 16, 64);       // dark navy
-  pdf.text(name || "Candidate", W / 2, 103, { align: "center" });
+  pdf.setFontSize(26);
+  pdf.setTextColor(26, 16, 64);                  // dark navy
+  pdf.text(name || "Candidate", POS.nameX, POS.nameY, { align: "center" });
 
-  // ── 3. IQ Number ─────────────────────────────────────────
-  // Inside the score box on the left side
+  // 3 ── IQ Number ───────────────────────────────────────────
   pdf.setFont("times", "bold");
-  pdf.setFontSize(36);
-  pdf.setTextColor(184, 150, 62);     // gold
-  pdf.text(String(iq), 57, 126, { align: "center" });
+  pdf.setFontSize(38);
+  pdf.setTextColor(184, 150, 62);                // gold
+  pdf.text(String(iq), POS.iqNumX, POS.iqNumY, { align: "center" });
 
-  // IQ classification label below the number
-  pdf.setFontSize(13);
+  // 4 ── IQ Classification ───────────────────────────────────
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(12);
   pdf.setTextColor(26, 16, 64);
-  pdf.text(label, 57, 136, { align: "center" });
+  pdf.text(label, POS.iqLabelX, POS.iqLabelY, { align: "center" });
 
-  // ── 4. Cognitive Profile percentages ─────────────────────
-  // Each row: category name already printed on cert.png,
-  // we just overlay the % value at the end of the dotted line
-  const profileCategories = [
-    "Logical Rsng",
-    "Pattern Recog",
-    "Math/Num",
-    "Verbal/Lang",
-    "Spatial Rsng",
-    "Working Mem",
-  ];
-
+  // 5 ── Cognitive Profile % values ─────────────────────────
+  //      Overlay just the number before the fixed "%" on the template
   const catKeys = Object.keys(catScores);
-  const pctX = 243;       // x position of % values (right side of dotted line)
-  const pctStartY = 121;  // y of first category row
-  const pctGap = 10.2;    // vertical gap between rows
-
   pdf.setFont("times", "bold");
-  pdf.setFontSize(10);
+  pdf.setFontSize(9.5);
   pdf.setTextColor(26, 16, 64);
 
   catKeys.forEach((cat, i) => {
     const s = catScores[cat];
     const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-    const y = pctStartY + i * pctGap;
-    pdf.text(pct + "%", pctX, y, { align: "right" });
+    const y = POS.pctStartY + i * POS.pctGap;
+    // Print just the number right-aligned; the "%" sign is already on the template
+    pdf.text(String(pct), POS.pctX, y, { align: "right" });
   });
 
-  // ── 5. Date ───────────────────────────────────────────────
+  // 6 ── Date ────────────────────────────────────────────────
   pdf.setFont("times", "bold");
   pdf.setFontSize(9);
   pdf.setTextColor(26, 16, 64);
-  pdf.text(date, 275, 175, { align: "right" });
+  pdf.text(date, POS.dateX, POS.dateY, { align: "right" });
 
-  // ── 6. Certificate ID ─────────────────────────────────────
+  // 7 ── Certificate ID ──────────────────────────────────────
   pdf.setFont("times", "normal");
   pdf.setFontSize(9);
   pdf.setTextColor(26, 16, 64);
-  pdf.text(certID, 275, 182, { align: "right" });
+  pdf.text(certID, POS.certIDX, POS.certIDY, { align: "right" });
 
-  // ── 7. Save PDF ───────────────────────────────────────────
+  // 8 ── Save ────────────────────────────────────────────────
   pdf.save(`IQ_Certificate_${name || "Candidate"}.pdf`);
 }
 
@@ -307,12 +322,12 @@ export default function IQTest() {
               <span style={{ fontSize: 28 }}>🎓</span>
               <div>
                 <div style={S.certTitle}>Official PDF Certificate</div>
-                <div style={S.certSubtitle}>Professionally designed · Direct PDF download</div>
+                <div style={S.certSubtitle}>Professionally designed · Instant download</div>
               </div>
               <div style={S.certPrice}>{CERT_PRICE}</div>
             </div>
             <div style={S.certFeatures}>
-              {["Official NeuroMark design", "Your name & IQ score", "Cognitive profile", "Instant PDF download"].map(f => (
+              {["Official NeuroMark design", "Your name & IQ score", "Cognitive profile", "Direct PDF download"].map(f => (
                 <div key={f} style={S.certFeature}><span style={{ color: "#fbbf24" }}>✓</span> {f}</div>
               ))}
             </div>
@@ -331,7 +346,7 @@ export default function IQTest() {
                   onClick={handleDownloadPDF} disabled={generating}>
                   {generating ? "⏳ Generating..." : "📄 Download PDF Certificate"}
                 </button>
-                {certGenerated && <p style={{ color: "#34d399", fontSize: 12, marginTop: 8 }}>✅ Certificate downloaded! Share on LinkedIn & WhatsApp 🎉</p>}
+                {certGenerated && <p style={{ color: "#34d399", fontSize: 12, marginTop: 8 }}>✅ Certificate downloaded! 🎉</p>}
               </div>
             )}
           </div>
