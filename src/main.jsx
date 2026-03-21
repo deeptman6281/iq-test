@@ -7,20 +7,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 )
-```
-
-4. Commit changes ✅
-
----
-
-## ✅ Final Check
-
-After all 5 files, your repo should look like this on GitHub:
-```
-iq-test/
-├── index.html
-├── package.json
-├── vite.config.js
-└── src/
-    ├── main.jsx
-    └── App.jsx
