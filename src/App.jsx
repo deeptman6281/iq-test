@@ -179,7 +179,103 @@ function drawCertificate(canvas, name, iq, label, certID, date, catScores, sealI
   ctx.textAlign = "center"; ctx.fillStyle = "#9a8060"; ctx.font = "9px Georgia,serif";
   ctx.fillText("This certificate is issued for educational and entertainment purposes. " + AUTHORITY + " © " + new Date().getFullYear(), W/2, H-18);
 }
+function generateVectorPDF(name, iq, label, certID, date, catScores) {
+  const { jsPDF } = require("jspdf");
 
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
+
+  const W = 297;
+  const H = 210;
+
+  pdf.setFillColor(253, 250, 244);
+  pdf.rect(0, 0, W, H, "F");
+
+  pdf.setDrawColor(184, 150, 62);
+  pdf.setLineWidth(1.5);
+  pdf.rect(10, 10, W - 20, H - 20);
+
+  pdf.setDrawColor(212, 175, 90);
+  pdf.setLineWidth(0.5);
+  pdf.rect(14, 14, W - 28, H - 28);
+
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(26);
+  pdf.text("NEUROMARK INSTITUTE", W / 2, 30, { align: "center" });
+
+  pdf.setFontSize(14);
+  pdf.text("Global Centre for Cognitive Assessment", W / 2, 38, { align: "center" });
+
+  pdf.setFont("times", "italic");
+  pdf.setFontSize(16);
+  pdf.text("Certificate of Cognitive Assessment", W / 2, 48, { align: "center" });
+
+  pdf.line(30, 52, W - 30, 52);
+
+  pdf.setFont("times", "normal");
+  pdf.setFontSize(14);
+  pdf.text("This is to certify that", W / 2, 65, { align: "center" });
+
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(28);
+  pdf.text(name || "Candidate", W / 2, 78, { align: "center" });
+
+  pdf.line(W / 2 - 50, 82, W / 2 + 50, 82);
+
+  pdf.setFontSize(12);
+  pdf.text(
+    "has successfully completed the NeuroMark Cognitive Assessment",
+    W / 2,
+    92,
+    { align: "center" }
+  );
+
+  pdf.rect(30, 105, 60, 45);
+
+  pdf.setFontSize(28);
+  pdf.text(String(iq), 60, 125, { align: "center" });
+
+  pdf.setFontSize(12);
+  pdf.text(label, 60, 135, { align: "center" });
+
+  pdf.setFontSize(10);
+  pdf.text("IQ SCORE", 60, 145, { align: "center" });
+
+  let y = 110;
+  pdf.setFontSize(10);
+  pdf.text("COGNITIVE PROFILE", 110, 100);
+
+  Object.keys(catScores).forEach((cat) => {
+    const s = catScores[cat];
+    const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+
+    pdf.text(cat, 110, y);
+
+    pdf.setFillColor(230, 220, 200);
+    pdf.rect(150, y - 4, 100, 4, "F");
+
+    pdf.setFillColor(47, 111, 79);
+    pdf.rect(150, y - 4, (pct / 100) * 100, 4, "F");
+
+    pdf.text(pct + "%", 255, y, { align: "right" });
+
+    y += 10;
+  });
+
+  pdf.text("Date: " + date, W - 20, 160, { align: "right" });
+  pdf.text("Certificate ID: " + certID, W - 20, 166, { align: "right" });
+
+  pdf.setFont("times", "italic");
+  pdf.text("Dr. A. Ravensworth", W / 2, 160, { align: "center" });
+
+  pdf.setFont("times", "normal");
+  pdf.text("Chief Assessment Officer", W / 2, 166, { align: "center" });
+
+  pdf.save(`IQ_Certificate_${name}.pdf`);
+}
 function canvasToPDF(canvas, name) {
   const imgData = canvas.toDataURL("image/jpeg", 0.98);
   const win = window.open("", "_blank");
@@ -261,7 +357,7 @@ export default function IQTest() {
       drawCertificate(canvas, certName, iq, label, certID, date, catScores, sealRef.current);
       setGenerating(false);
       setCertGenerated(true);
-      canvasToPDF(canvas, certName);
+      generateVectorPDF(certName, iq, label, certID, date, catScores);
     }, 150);
   };
 
