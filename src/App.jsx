@@ -30,6 +30,15 @@ const QUESTIONS = [
 const TOTAL_TIME = 20 * 60;
 const categories = [...new Set(QUESTIONS.map(q => q.category))];
 
+const COLORS = {
+  NAVY: "#1a2b44",
+  GOLD_DARK: "#8e7341",
+  GOLD_LIGHT: "#c5a467",
+  TEXT_MAIN: "#2c3e50",
+  BG_CREAM: "#fdfaf4",
+  ACCENT_GREEN: "#2d5a27"
+};
+
 function getIQScore(correct, total, timeLeft) {
   const base = (correct / total) * 100;
   const timeBonus = timeLeft > 0 ? Math.round((timeLeft / TOTAL_TIME) * 8) : 0;
@@ -49,157 +58,161 @@ function generateCertID() {
   return "NMI-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).substring(2,6).toUpperCase();
 }
 
-function getCatColor(pct) {
-  if (pct >= 75) return "#2ecc71";
-  if (pct >= 50) return "#f39c12";
-  return "#e74c3c";
-}
-
 function drawCertificate(canvas, name, iq, label, certID, date, sealImg, catScores) {
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
 
   // Background
-  ctx.fillStyle = "#fdfaf4";
+  ctx.fillStyle = COLORS.BG_CREAM;
   ctx.fillRect(0, 0, W, H);
 
-  // Borders
-  ctx.strokeStyle = "#b8963e"; ctx.lineWidth = 6;
-  ctx.strokeRect(18, 18, W-36, H-36);
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 2;
-  ctx.strokeRect(28, 28, W-56, H-56);
+  // Ornate Borders
+  ctx.strokeStyle = COLORS.GOLD_DARK;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(30, 30, W - 60, H - 60);
+  
+  ctx.strokeStyle = COLORS.GOLD_LIGHT;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(42, 42, W - 84, H - 84);
 
-  // Corner dots
-  [[40,40],[W-40,40],[40,H-40],[W-40,H-40]].forEach(([x,y]) => {
-    ctx.fillStyle = "#b8963e";
-    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
-  });
-
-  // Top deco lines
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(60,70); ctx.lineTo(W-60,70); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(60,74); ctx.lineTo(W-60,74); ctx.stroke();
+  // Decorative Side Ornaments
+  const drawOrnaments = (x) => {
+    ctx.save();
+    ctx.strokeStyle = COLORS.GOLD_DARK;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 1;
+    for (let i = 80; i < H - 80; i += 30) {
+      ctx.beginPath();
+      ctx.arc(x, i, 10, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+  drawOrnaments(20);
+  drawOrnaments(W - 20);
 
   // Header
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 20px Georgia,serif"; ctx.textAlign = "center";
-  ctx.fillText(AUTHORITY, W/2, 108);
-  ctx.fillStyle = "#6b5c3e"; ctx.font = "12px Georgia,serif";
-  ctx.fillText(AUTHORITY_TAGLINE, W/2, 128);
-  ctx.fillStyle = "#b8963e"; ctx.font = "italic 14px Georgia,serif";
-  ctx.fillText("Certificate of Cognitive Assessment", W/2, 158);
+  ctx.textAlign = "center";
+  
+  // Brain Icons
+  ctx.fillStyle = COLORS.GOLD_LIGHT;
+  ctx.font = "40px serif";
+  ctx.fillText("🧠", W/2 - 260, 115);
+  ctx.fillText("🧠", W/2 + 260, 115);
 
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(100,170); ctx.lineTo(W-100,170); ctx.stroke();
+  ctx.fillStyle = COLORS.NAVY;
+  ctx.font = "bold 34px 'Times New Roman', serif";
+  ctx.fillText(AUTHORITY.toUpperCase(), W / 2, 110);
+  
+  ctx.fillStyle = COLORS.TEXT_MAIN;
+  ctx.font = "14px 'Georgia', serif";
+  ctx.fillText(AUTHORITY_TAGLINE, W / 2, 134);
 
-  // Certify text
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "13px Georgia,serif";
-  ctx.fillText("This is to certify that", W/2, 200);
+  ctx.fillStyle = COLORS.GOLD_DARK;
+  ctx.font = "italic 24px 'Georgia', serif";
+  ctx.fillText("Certificate of Cognitive Assessment", W / 2, 175);
 
-  // Name
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 30px Georgia,serif";
-  ctx.fillText(name || "Candidate", W/2, 242);
+  ctx.strokeStyle = COLORS.GOLD_LIGHT;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W/2 - 150, 190); ctx.lineTo(W/2 + 150, 190); ctx.stroke();
+
+  // Recipient info
+  ctx.fillStyle = COLORS.TEXT_MAIN;
+  ctx.font = "16px 'Georgia', serif";
+  ctx.fillText("This is to certify that", W / 2, 230);
+
+  ctx.fillStyle = COLORS.NAVY;
+  ctx.font = "bold 52px 'Times New Roman', serif";
+  ctx.fillText(name || "Candidate", W / 2, 290);
+
+  ctx.strokeStyle = COLORS.GOLD_DARK;
+  ctx.lineWidth = 2.5;
   const nw = ctx.measureText(name || "Candidate").width;
-  ctx.strokeStyle = "#b8963e"; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(W/2-nw/2,250); ctx.lineTo(W/2+nw/2,250); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2 - nw/2 - 20, 305); ctx.lineTo(W/2 + nw/2 + 20, 305); ctx.stroke();
 
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "13px Georgia,serif";
-  ctx.fillText("has successfully completed the NeuroMark Cognitive Assessment", W/2, 276);
+  ctx.fillStyle = COLORS.TEXT_MAIN;
+  ctx.font = "15px 'Georgia', serif";
+  ctx.fillText("has successfully completed the NeuroMark Cognitive Assessment", W / 2, 335);
 
-  // ── SCORE + BREAKDOWN SIDE BY SIDE ──
-  // Left: IQ score block
-  const scoreX = W/2 - 260;
-  const scoreBoxW = 220;
-  const scoreBoxH = 180;
-  const scoreBoxY = 292;
+  // Score Badge (Left Side)
+  const bX = 140, bY = 370, bW = 260, bH = 220;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(bX, bY, bW, bH);
+  ctx.strokeStyle = COLORS.GOLD_DARK;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(bX, bY, bW, bH);
 
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.strokeRect(scoreX, scoreBoxY, scoreBoxW, scoreBoxH);
+  ctx.fillStyle = COLORS.GOLD_DARK;
+  ctx.font = "bold 82px 'Times New Roman', serif";
+  ctx.fillText(iq, bX + bW/2, bY + 100);
 
-  ctx.fillStyle = "#b8963e"; ctx.font = "bold 58px Georgia,serif"; ctx.textAlign = "center";
-  ctx.fillText(iq, scoreX + scoreBoxW/2, scoreBoxY + 76);
+  ctx.fillStyle = COLORS.NAVY;
+  ctx.font = "bold 20px 'Georgia', serif";
+  ctx.fillText(label.toUpperCase(), bX + bW/2, bY + 145);
+  
+  ctx.fillStyle = COLORS.GOLD_DARK;
+  ctx.font = "11px 'Georgia', serif";
+  ctx.fillText("IQ SCORE", bX + bW/2, bY + 175);
+  ctx.fillText("NeuroMark Certified 2026", bX + bW/2, bY + 195);
 
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 16px Georgia,serif";
-  ctx.fillText(label, scoreX + scoreBoxW/2, scoreBoxY + 104);
-
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 0.8;
-  ctx.beginPath(); ctx.moveTo(scoreX+20, scoreBoxY+118); ctx.lineTo(scoreX+scoreBoxW-20, scoreBoxY+118); ctx.stroke();
-
-  ctx.fillStyle = "#6b5c3e"; ctx.font = "11px Georgia,serif";
-  ctx.fillText("IQ SCORE", scoreX + scoreBoxW/2, scoreBoxY + 136);
-  ctx.fillText("NeuroMark Assessment 2026", scoreX + scoreBoxW/2, scoreBoxY + 154);
-  ctx.fillText("NeuroMark Certified · 2026", scoreX + scoreBoxW/2, scoreBoxY + 170);
-
-  // Right: Category breakdown bars
-  const barX = W/2 - 20;
-  const barW = 290;
-  const barStartY = 300;
-  const barH = 14;
-  const barGap = 26;
-
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "bold 11px Georgia,serif"; ctx.textAlign = "left";
-  ctx.fillText("COGNITIVE PROFILE", barX, barStartY - 8);
+  // Profile Bars (Right Side)
+  const barX = 480, barY = 390;
+  ctx.textAlign = "left";
+  ctx.fillStyle = COLORS.NAVY;
+  ctx.font = "bold 15px 'Georgia', serif";
+  ctx.fillText("COGNITIVE PROFILE", barX, barY - 15);
 
   categories.forEach((cat, i) => {
     const s = catScores[cat];
-    const pct = s && s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-    const y = barStartY + i * barGap;
-    const shortName = cat.replace(" / ", "/").replace("Reasoning","Rsng").replace("Recognition","Recog").replace("Numerical","Num").replace("Language","Lang").replace("Memory","Mem");
+    const pct = s && s.total > 0 ? (s.correct / s.total) * 100 : 0;
+    const y = barY + i * 34;
+    
+    ctx.fillStyle = COLORS.TEXT_MAIN;
+    ctx.font = "13px 'Georgia', serif";
+    ctx.fillText(cat.replace("Recognition","Recog").replace("Numerical","Num").replace("Reasoning","Rsng"), barX, y + 14);
 
-    // Label
-    ctx.fillStyle = "#4a3f2f"; ctx.font = "10px Georgia,serif"; ctx.textAlign = "left";
-    ctx.fillText(shortName, barX, y + 10);
-
-    // Bar background
-    const bx = barX + 118;
-    ctx.fillStyle = "#e8dfc8";
-    ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(bx, y, barW - 118, barH, 4) : ctx.rect(bx, y, barW - 118, barH);
-    ctx.fill();
-
-    // Bar fill
-    const fillW = Math.max(4, ((barW - 118) * pct) / 100);
-    ctx.fillStyle = getCatColor(pct);
-    ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(bx, y, fillW, barH, 4) : ctx.rect(bx, y, fillW, barH);
-    ctx.fill();
-
-    // Pct label
-    ctx.fillStyle = "#6b5c3e"; ctx.font = "10px Georgia,serif"; ctx.textAlign = "right";
-    ctx.fillText(pct + "%", bx - 6, y + 11);
+    // Bar BG
+    ctx.fillStyle = "#e8e1d5";
+    ctx.fillRect(barX + 160, y, 380, 16);
+    
+    // Bar Fill
+    ctx.fillStyle = pct >= 75 ? COLORS.ACCENT_GREEN : COLORS.GOLD_DARK;
+    ctx.fillRect(barX + 160, y, (380 * pct) / 100, 16);
+    
+    ctx.fillStyle = COLORS.NAVY;
+    ctx.font = "bold 12px 'Georgia', serif";
+    ctx.textAlign = "right";
+    ctx.fillText(`${Math.round(pct)}%`, barX + 580, y + 14);
+    ctx.textAlign = "left";
   });
 
-  // Divider below score + breakdown
-  const divY = scoreBoxY + scoreBoxH + 18;
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(100, divY); ctx.lineTo(W-100, divY); ctx.stroke();
-
-  // Seal bottom left
+  // Footer Section
+  const footerY = H - 160;
+  
+  // Seal
   if (sealImg) {
-    ctx.drawImage(sealImg, 44, divY + 10, 108, 108);
+    ctx.drawImage(sealImg, W/2 - 70, footerY - 50, 140, 140);
   }
 
   // Signature
-  const sigY = divY + 30;
-  ctx.strokeStyle = "#4a3f2f"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(240, sigY + 48); ctx.lineTo(480, sigY + 48); ctx.stroke();
-  ctx.fillStyle = "#1a1040"; ctx.font = "italic bold 14px Georgia,serif"; ctx.textAlign = "center";
-  ctx.fillText("Dr. A. Ravensworth", 360, sigY + 44);
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "10px Georgia,serif";
-  ctx.fillText("Chief Assessment Officer", 360, sigY + 60);
-  ctx.fillText(AUTHORITY, 360, sigY + 74);
+  ctx.textAlign = "center";
+  ctx.strokeStyle = COLORS.NAVY;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(120, footerY + 80); ctx.lineTo(400, footerY + 80); ctx.stroke();
+  
+  ctx.fillStyle = COLORS.NAVY;
+  ctx.font = "italic bold 22px 'Georgia', serif";
+  ctx.fillText("Dr. A. Ravensworth", 260, footerY + 70);
+  ctx.font = "12px 'Georgia', serif";
+  ctx.fillText("Chief Assessment Officer, NeuroMark Institute", 260, footerY + 100);
 
-  // Right info
-  ctx.textAlign = "right"; ctx.fillStyle = "#6b5c3e"; ctx.font = "10px Georgia,serif";
-  ctx.fillText("Date: " + date, W-50, sigY + 36);
-  ctx.fillText("Certificate ID: " + certID, W-50, sigY + 52);
-  ctx.fillText("Verify at neuromark.institute", W-50, sigY + 68);
-
-  // Bottom lines
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(60,H-38); ctx.lineTo(W-60,H-38); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(60,H-34); ctx.lineTo(W-60,H-34); ctx.stroke();
-  ctx.textAlign = "center"; ctx.fillStyle = "#9a8060"; ctx.font = "9px Georgia,serif";
-  ctx.fillText("This certificate is issued for educational and entertainment purposes. " + AUTHORITY + " © " + new Date().getFullYear(), W/2, H-18);
+  // Metadata
+  ctx.textAlign = "right";
+  ctx.fillStyle = COLORS.TEXT_MAIN;
+  ctx.font = "11px 'Courier New', monospace";
+  ctx.fillText(`DATE: ${date}`, W - 120, footerY + 60);
+  ctx.fillText(`CERTIFICATE ID: ${certID}`, W - 120, footerY + 80);
+  ctx.fillText(`VERIFY: neuromark.institute/verify`, W - 120, footerY + 100);
 }
 
 function canvasToPDF(canvas, name) {
@@ -250,8 +263,6 @@ export default function IQTest() {
     else setCurrent(c=>c+1);
   };
 
-  const formatTime = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
-
   const computeResults = () => {
     let correct=0;
     const catScores={};
@@ -267,21 +278,21 @@ export default function IQTest() {
     const {iq,catScores} = computeResults();
     const {label} = getIQLabel(iq);
     const canvas = canvasRef.current;
-    canvas.width=1200; canvas.height=848;
+    canvas.width=1400; canvas.height=990;
     const date = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
     setGenerating(true);
-    const tryLoad = (src, onDone) => {
-      const img = new Image();
-      img.crossOrigin="anonymous"; img.src=src;
-      img.onload=()=>onDone(img);
-      img.onerror=()=>onDone(null);
+    
+    const img = new Image();
+    img.crossOrigin="anonymous";
+    img.src = "/seal.png"; 
+    
+    img.onload = () => {
+      drawCertificate(canvas,certName,iq,label,certID,date,img,catScores);
+      setGenerating(false); setCertGenerated(true);
+      callback(canvas);
     };
-    tryLoad("/seal.png", img => {
-      if(img){finish(img);}
-      else tryLoad("/Seal.png", img2=>finish(img2));
-    });
-    const finish = (sealImg) => {
-      drawCertificate(canvas,certName,iq,label,certID,date,sealImg,catScores);
+    img.onerror = () => {
+      drawCertificate(canvas,certName,iq,label,certID,date,null,catScores);
       setGenerating(false); setCertGenerated(true);
       callback(canvas);
     };
@@ -291,7 +302,6 @@ export default function IQTest() {
   const handlePayment = () => {setPaid(true);setShowPaywall(false);};
 
   const progress=(current/QUESTIONS.length)*100;
-  const timerUrgent=timeLeft<120;
   const q=QUESTIONS[current];
 
   if(screen==="intro") return (
@@ -299,20 +309,17 @@ export default function IQTest() {
       <div style={S.card}>
         <div style={S.badge}>COGNITIVE ASSESSMENT</div>
         <h1 style={S.title}>IQ<span style={{color:"#a78bfa"}}>Test</span></h1>
-        <p style={S.subtitle}>A scientifically-inspired assessment across 6 cognitive dimensions</p>
+        <p style={S.subtitle}>Professional-grade evaluation by {AUTHORITY}</p>
         <div style={S.categoryGrid}>
-          {[{icon:"🔗",name:"Logical Reasoning"},{icon:"🔷",name:"Pattern Recognition"},{icon:"📐",name:"Math / Numerical"},{icon:"📝",name:"Verbal / Language"},{icon:"🧊",name:"Spatial Reasoning"},{icon:"🧠",name:"Working Memory"}].map(c=>(
+          {[{icon:"🔗",name:"Logic"},{icon:"🔷",name:"Patterns"},{icon:"📐",name:"Math"},{icon:"📝",name:"Verbal"},{icon:"🧊",name:"Spatial"},{icon:"🧠",name:"Memory"}].map(c=>(
             <div key={c.name} style={S.catChip}><span>{c.icon}</span> {c.name}</div>
           ))}
         </div>
         <div style={S.infoRow}>
           <div style={S.infoBox}><span style={S.infoNum}>20</span><span style={S.infoLabel}>Questions</span></div>
           <div style={S.infoBox}><span style={S.infoNum}>20</span><span style={S.infoLabel}>Minutes</span></div>
-          <div style={S.infoBox}><span style={S.infoNum}>145</span><span style={S.infoLabel}>Max IQ</span></div>
         </div>
-        <div style={S.certPreview}>🎓 <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> — Download with NeuroMark seal + your cognitive profile breakdown for {CERT_PRICE}</div>
         <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment →</button>
-        <p style={S.disclaimer}>Issued by {AUTHORITY} · For educational purposes</p>
       </div>
     </div>
   );
@@ -321,11 +328,8 @@ export default function IQTest() {
     <div style={S.page}>
       <div style={S.testCard}>
         <div style={S.testHeader}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={S.qCounter}>{current+1} / {QUESTIONS.length}</span>
-            <span style={S.catTag}>{q.categoryIcon} {q.category}</span>
-          </div>
-          <div style={{...S.timer,color:timerUrgent?"#f87171":"#a78bfa",borderColor:timerUrgent?"#f87171":"#a78bfa"}}>⏱ {formatTime(timeLeft)}</div>
+          <span style={S.qCounter}>QUESTION {current+1} OF {QUESTIONS.length}</span>
+          <span style={S.catTag}>{q.categoryIcon} {q.category}</span>
         </div>
         <div style={S.progressBg}><div style={{...S.progressFill,width:`${progress}%`}}/></div>
         <div style={S.questionBox}><p style={S.questionText}>{q.question}</p></div>
@@ -336,107 +340,64 @@ export default function IQTest() {
             </button>
           ))}
         </div>
-        <div style={{display:"flex",gap:12,marginTop:8}}>
-          {current>0&&<button style={S.skipBtn} onClick={()=>{setCurrent(c=>c-1);setSelected(answers[current-1]??null);}}>← Back</button>}
-          <button style={{...S.nextBtn,opacity:selected===null?0.4:1,flex:1}} disabled={selected===null} onClick={handleNext}>
-            {current+1===QUESTIONS.length?"Submit Test ✓":"Next Question →"}
-          </button>
-        </div>
+        <button style={{...S.nextBtn,opacity:selected===null?0.4:1}} disabled={selected===null} onClick={handleNext}>
+          {current+1===QUESTIONS.length?"Submit Assessment ✓":"Next Question →"}
+        </button>
       </div>
     </div>
   );
 
   if(screen==="result") {
-    const {correct,total,iq,catScores,timeUsed}=computeResults();
+    const {correct,total,iq,catScores}=computeResults();
     const {label,color}=getIQLabel(iq);
-    const mins=Math.floor(timeUsed/60),secs=timeUsed%60;
     return (
       <div style={S.page}>
         <div style={S.resultCard}>
-          <div style={S.badge}>YOUR RESULTS</div>
-          <div style={S.iqRing}>
-            <svg width="160" height="160" viewBox="0 0 160 160">
-              <circle cx="80" cy="80" r="68" fill="none" stroke="#1e1b4b" strokeWidth="12"/>
-              <circle cx="80" cy="80" r="68" fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
-                strokeDasharray={`${(iq/145)*427} 427`} transform="rotate(-90 80 80)"/>
-            </svg>
-            <div style={S.iqInner}>
-              <div style={{...S.iqNumber,color}}>{iq}</div>
-              <div style={S.iqLabel}>IQ Score</div>
-            </div>
-          </div>
-          <div style={{...S.levelBadge,background:color+"22",color,border:`1px solid ${color}`}}>{label}</div>
-          <div style={S.statsRow}>
-            <div style={S.statBox}><span style={S.statNum}>{correct}/{total}</span><span style={S.statLabel}>Correct</span></div>
-            <div style={S.statBox}><span style={S.statNum}>{Math.round((correct/total)*100)}%</span><span style={S.statLabel}>Accuracy</span></div>
-            <div style={S.statBox}><span style={S.statNum}>{mins}m {secs}s</span><span style={S.statLabel}>Time</span></div>
-          </div>
-          <div style={S.breakdownTitle}>Category Breakdown</div>
+          <div style={S.badge}>FINAL SCORE</div>
+          <div style={{...S.iqNumber,color}}>{iq}</div>
+          <div style={{...S.levelBadge,background:color+"22",color}}>{label}</div>
+          
+          <div style={S.breakdownTitle}>PERFORMANCE BY CATEGORY</div>
           {categories.map(cat=>{
-            const s=catScores[cat]; if(!s) return null;
+            const s=catScores[cat];
             const pct=s.total>0?Math.round((s.correct/s.total)*100):0;
-            const qc=QUESTIONS.find(q=>q.category===cat);
             return (
               <div key={cat} style={S.catRow}>
-                <div style={S.catRowLeft}><span>{qc?.categoryIcon}</span><span style={S.catRowName}>{cat}</span></div>
-                <div style={S.catBarBg}><div style={{...S.catBarFill,width:`${pct}%`,background:pct>=75?"#34d399":pct>=50?"#fbbf24":"#f87171"}}/></div>
-                <span style={S.catPct}>{s.correct}/{s.total}</span>
+                <span style={S.catRowName}>{cat}</span>
+                <div style={S.catBarBg}><div style={{...S.catBarFill,width:`${pct}%`,background:pct>=75?COLORS.ACCENT_GREEN:COLORS.GOLD_DARK}}/></div>
+                <span style={S.catPct}>{pct}%</span>
               </div>
             );
           })}
 
           <div style={S.certSection}>
-            <div style={S.certHeader}>
-              <span style={{fontSize:28}}>🎓</span>
-              <div>
-                <div style={S.certTitle}>Official PDF Certificate</div>
-                <div style={S.certSubtitle}>With seal + cognitive profile breakdown included</div>
-              </div>
-              <div style={S.certPrice}>{CERT_PRICE}</div>
-            </div>
-            <div style={S.certFeatures}>
-              {["NeuroMark seal","IQ score & classification","Cognitive profile bars","A4 PDF — print ready"].map(f=>(
-                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>✓</span> {f}</div>
-              ))}
-            </div>
+            <div style={S.certTitle}>🏆 Professional PDF Certificate</div>
+            <p style={S.certSubtitle}>Get your formal certificate with seal and breakdown for {CERT_PRICE}</p>
             {!paid?(
               <>
-                <input style={S.nameInput} placeholder="Enter your full name for the certificate" value={certName} onChange={e=>setCertName(e.target.value)} maxLength={40}/>
+                <input style={S.nameInput} placeholder="Enter Full Name" value={certName} onChange={e=>setCertName(e.target.value)}/>
                 <button style={S.certBtn} onClick={()=>{if(certName.trim())setShowPaywall(true);}}>
-                  🏆 Get My Certificate — {CERT_PRICE}
+                   Unlock Certificate — {CERT_PRICE}
                 </button>
-                {!certName.trim()&&<p style={{color:"#64748b",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>Enter your name above to continue</p>}
               </>
             ):(
-              <div style={{textAlign:"center"}}>
-                <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}} onClick={handleDownloadPDF} disabled={generating}>
-                  {generating?"⏳ Generating...":"📄 Download PDF Certificate"}
-                </button>
-                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Print dialog opened — choose "Save as PDF" 🎉</p>}
-              </div>
+              <button style={S.certBtn} onClick={handleDownloadPDF} disabled={generating}>
+                {generating?"⏳ Generating...":"📄 Download PDF Certificate"}
+              </button>
             )}
           </div>
-
+          
           {showPaywall&&(
             <div style={S.modal}>
               <div style={S.modalCard}>
-                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>🏆</div>
-                <div style={S.modalTitle}>Complete Your Certificate</div>
-                <div style={S.modalName}>{certName}</div>
-                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> — {label}</div>
-                <div style={S.modalPrice}>{CERT_PRICE} only</div>
-                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 16px"}}>One-time · Instant PDF · Seal + profile included</p>
-                <button style={S.payBtn} onClick={handlePayment}>Pay {CERT_PRICE} & Download PDF</button>
+                <div style={S.modalTitle}>Complete Order</div>
+                <p style={{color:"#94a3b8",textAlign:"center"}}>PDF Certificate for {certName}</p>
+                <div style={S.modalPrice}>{CERT_PRICE}</div>
+                <button style={S.payBtn} onClick={handlePayment}>Pay & Download</button>
                 <button style={S.cancelBtn} onClick={()=>setShowPaywall(false)}>Cancel</button>
-                <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:8}}>🔒 Secure payment · No subscription</p>
               </div>
             </div>
           )}
-
-          <button style={{...S.startBtn,marginTop:16}} onClick={()=>{
-            setScreen("intro");setCurrent(0);setAnswers({});setSelected(null);
-            setTimeLeft(TOTAL_TIME);setPaid(false);setCertGenerated(false);setCertName("");
-          }}>Retake Test ↺</button>
         </div>
         <canvas ref={canvasRef} style={{display:"none"}}/>
       </div>
@@ -445,67 +406,49 @@ export default function IQTest() {
 }
 
 const S={
-  page:{minHeight:"100vh",background:"linear-gradient(135deg,#0f0c29 0%,#1a1040 50%,#0f0c29 100%)",display:"flex",justifyContent:"center",alignItems:"flex-start",padding:"32px 16px",fontFamily:"'Georgia',serif"},
-  card:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:24,padding:"48px 40px",maxWidth:540,width:"100%",textAlign:"center",backdropFilter:"blur(20px)",boxShadow:"0 0 80px rgba(167,139,250,0.1)"},
-  badge:{display:"inline-block",background:"rgba(167,139,250,0.15)",color:"#a78bfa",border:"1px solid rgba(167,139,250,0.4)",borderRadius:100,padding:"4px 16px",fontSize:11,letterSpacing:3,fontFamily:"monospace",marginBottom:20},
-  title:{fontSize:56,fontWeight:900,color:"#f1f5f9",margin:"0 0 8px",letterSpacing:-2},
-  subtitle:{color:"#94a3b8",fontSize:15,marginBottom:32,lineHeight:1.6},
+  page:{minHeight:"100vh",background:"#0a0a0c",display:"flex",justifyContent:"center",alignItems:"flex-start",padding:"40px 20px",fontFamily:"'Georgia',serif"},
+  card:{background:"#141418",border:"1px solid #2d2d35",borderRadius:24,padding:"48px 40px",maxWidth:500,width:"100%",textAlign:"center"},
+  badge:{color:"#a78bfa",fontSize:11,letterSpacing:3,marginBottom:20},
+  title:{fontSize:52,fontWeight:900,color:"#fff",margin:"0 0 8px"},
+  subtitle:{color:"#94a3b8",fontSize:16,marginBottom:32},
   categoryGrid:{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginBottom:32},
-  catChip:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:100,padding:"6px 14px",fontSize:12,color:"#cbd5e1",display:"flex",alignItems:"center",gap:6},
+  catChip:{background:"#222228",borderRadius:100,padding:"6px 14px",fontSize:12,color:"#cbd5e1"},
   infoRow:{display:"flex",gap:12,justifyContent:"center",marginBottom:24},
-  infoBox:{display:"flex",flexDirection:"column",alignItems:"center",background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:16,padding:"16px 24px"},
-  infoNum:{fontSize:28,fontWeight:900,color:"#a78bfa"},
-  infoLabel:{fontSize:11,color:"#64748b",letterSpacing:1,marginTop:2,fontFamily:"monospace"},
-  certPreview:{background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"12px 16px",fontSize:13,color:"#cbd5e1",marginBottom:24,lineHeight:1.6},
-  startBtn:{width:"100%",padding:"16px",background:"linear-gradient(135deg,#7c3aed,#a78bfa)",color:"#fff",border:"none",borderRadius:14,fontSize:16,fontWeight:700,cursor:"pointer",letterSpacing:0.5,boxShadow:"0 8px 32px rgba(124,58,237,0.4)"},
-  disclaimer:{color:"#475569",fontSize:11,marginTop:16,fontFamily:"monospace"},
-  testCard:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:24,padding:"36px 32px",maxWidth:580,width:"100%",backdropFilter:"blur(20px)"},
-  testHeader:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16},
-  qCounter:{color:"#94a3b8",fontSize:13,fontFamily:"monospace"},
-  catTag:{background:"rgba(167,139,250,0.12)",color:"#a78bfa",borderRadius:100,padding:"3px 12px",fontSize:12,border:"1px solid rgba(167,139,250,0.3)"},
-  timer:{fontFamily:"monospace",fontSize:15,fontWeight:700,border:"1px solid",borderRadius:8,padding:"4px 12px"},
-  progressBg:{height:4,background:"rgba(255,255,255,0.08)",borderRadius:100,marginBottom:28,overflow:"hidden"},
-  progressFill:{height:"100%",background:"linear-gradient(90deg,#7c3aed,#a78bfa)",borderRadius:100,transition:"width 0.4s ease"},
-  questionBox:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"24px",marginBottom:24},
-  questionText:{color:"#e2e8f0",fontSize:17,lineHeight:1.7,margin:0,fontWeight:500},
-  optionsGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16},
-  optionBtn:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px 16px",color:"#cbd5e1",fontSize:14,cursor:"pointer",textAlign:"left",display:"flex",alignItems:"center",gap:10,fontFamily:"'Georgia',serif"},
-  optionSelected:{background:"rgba(167,139,250,0.15)",border:"1px solid rgba(167,139,250,0.6)",color:"#f1f5f9"},
-  optionLetter:{background:"rgba(167,139,250,0.2)",color:"#a78bfa",borderRadius:6,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,flexShrink:0,fontFamily:"monospace"},
-  nextBtn:{padding:"14px",background:"linear-gradient(135deg,#7c3aed,#a78bfa)",color:"#fff",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer"},
-  skipBtn:{padding:"14px 20px",background:"rgba(255,255,255,0.06)",color:"#94a3b8",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,fontSize:14,cursor:"pointer",fontFamily:"'Georgia',serif"},
-  resultCard:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:24,padding:"40px 36px",maxWidth:580,width:"100%",backdropFilter:"blur(20px)",textAlign:"center"},
-  iqRing:{position:"relative",width:160,height:160,margin:"24px auto 16px"},
-  iqInner:{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"},
-  iqNumber:{fontSize:40,fontWeight:900,lineHeight:1},
-  iqLabel:{color:"#64748b",fontSize:11,fontFamily:"monospace",letterSpacing:1},
-  levelBadge:{display:"inline-block",borderRadius:100,padding:"6px 20px",fontSize:13,fontWeight:700,letterSpacing:0.5,marginBottom:24},
-  statsRow:{display:"flex",gap:12,justifyContent:"center",marginBottom:28},
-  statBox:{display:"flex",flexDirection:"column",alignItems:"center",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,padding:"14px 20px",flex:1},
-  statNum:{fontSize:22,fontWeight:800,color:"#f1f5f9"},
-  statLabel:{fontSize:10,color:"#64748b",fontFamily:"monospace",letterSpacing:1,marginTop:2},
-  breakdownTitle:{color:"#94a3b8",fontSize:11,letterSpacing:2,fontFamily:"monospace",textAlign:"left",marginBottom:12},
-  catRow:{display:"flex",alignItems:"center",gap:10,marginBottom:10},
-  catRowLeft:{display:"flex",alignItems:"center",gap:6,width:160,textAlign:"left"},
-  catRowName:{color:"#cbd5e1",fontSize:12,whiteSpace:"nowrap"},
-  catBarBg:{flex:1,height:8,background:"rgba(255,255,255,0.08)",borderRadius:100,overflow:"hidden"},
-  catBarFill:{height:"100%",borderRadius:100,transition:"width 1s ease"},
-  catPct:{color:"#64748b",fontSize:12,fontFamily:"monospace",width:32},
-  certSection:{background:"rgba(251,191,36,0.06)",border:"1px solid rgba(251,191,36,0.25)",borderRadius:20,padding:"24px",marginTop:24,textAlign:"left"},
-  certHeader:{display:"flex",alignItems:"center",gap:12,marginBottom:16},
-  certTitle:{color:"#fbbf24",fontWeight:700,fontSize:16},
-  certSubtitle:{color:"#94a3b8",fontSize:12},
-  certPrice:{marginLeft:"auto",background:"rgba(251,191,36,0.15)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.4)",borderRadius:100,padding:"4px 14px",fontSize:16,fontWeight:700},
-  certFeatures:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16},
-  certFeature:{color:"#cbd5e1",fontSize:12,display:"flex",gap:6,alignItems:"flex-start"},
-  nameInput:{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:10,color:"#f1f5f9",fontSize:14,marginBottom:12,boxSizing:"border-box",fontFamily:"'Georgia',serif",outline:"none"},
-  certBtn:{width:"100%",padding:"14px",background:"linear-gradient(135deg,#b8963e,#fbbf24)",color:"#1a0f00",border:"none",borderRadius:12,fontSize:15,fontWeight:700,cursor:"pointer",boxShadow:"0 6px 24px rgba(184,150,62,0.4)"},
-  modal:{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:16},
-  modalCard:{background:"#1a1040",border:"1px solid rgba(251,191,36,0.3)",borderRadius:24,padding:"36px 32px",maxWidth:380,width:"100%",boxShadow:"0 0 60px rgba(251,191,36,0.15)"},
-  modalTitle:{color:"#f1f5f9",fontSize:20,fontWeight:700,textAlign:"center",marginBottom:8},
-  modalName:{color:"#a78bfa",fontSize:22,fontWeight:700,textAlign:"center",marginBottom:4},
-  modalIQ:{color:"#94a3b8",fontSize:14,textAlign:"center",marginBottom:16},
-  modalPrice:{color:"#fbbf24",fontSize:36,fontWeight:900,textAlign:"center",marginBottom:4},
-  payBtn:{width:"100%",padding:"14px",background:"linear-gradient(135deg,#b8963e,#fbbf24)",color:"#1a0f00",border:"none",borderRadius:12,fontSize:16,fontWeight:700,cursor:"pointer",marginBottom:10,boxShadow:"0 6px 24px rgba(184,150,62,0.4)"},
-  cancelBtn:{width:"100%",padding:"12px",background:"transparent",color:"#64748b",border:"1px solid rgba(255,255,255,0.1)",borderRadius:12,fontSize:14,cursor:"pointer",fontFamily:"'Georgia',serif"},
+  infoBox:{background:"#1c1c22",borderRadius:16,padding:"16px 24px"},
+  infoNum:{fontSize:28,fontWeight:900,color:"#fff",display:"block"},
+  infoLabel:{fontSize:11,color:"#64748b"},
+  startBtn:{width:"100%",padding:"16px",background:"#7c3aed",color:"#fff",border:"none",borderRadius:14,fontSize:16,fontWeight:700,cursor:"pointer"},
+  testCard:{background:"#141418",borderRadius:24,padding:"36px 32px",maxWidth:580,width:"100%"},
+  testHeader:{display:"flex",justifyContent:"space-between",marginBottom:16},
+  qCounter:{color:"#64748b",fontSize:12},
+  catTag:{color:"#a78bfa",fontSize:12},
+  progressBg:{height:4,background:"#222",marginBottom:28},
+  progressFill:{height:"100%",background:"#7c3aed"},
+  questionBox:{padding:"24px",marginBottom:24},
+  questionText:{color:"#fff",fontSize:18,lineHeight:1.6},
+  optionsGrid:{display:"grid",gridTemplateColumns:"1fr",gap:12,marginBottom:24},
+  optionBtn:{background:"#1c1c22",border:"1px solid #2d2d35",borderRadius:12,padding:"16px",color:"#cbd5e1",textAlign:"left",display:"flex",gap:12,cursor:"pointer"},
+  optionSelected:{borderColor:"#7c3aed",background:"#252035"},
+  optionLetter:{color:"#7c3aed",fontWeight:700},
+  nextBtn:{width:"100%",padding:"16px",background:"#7c3aed",color:"#fff",borderRadius:12,border:"none",fontWeight:700},
+  resultCard:{background:"#141418",borderRadius:24,padding:"40px",maxWidth:500,width:"100%",textAlign:"center"},
+  iqNumber:{fontSize:72,fontWeight:900,margin:"10px 0"},
+  levelBadge:{padding:"6px 20px",borderRadius:100,fontSize:14,fontWeight:700,marginBottom:32,display:"inline-block"},
+  breakdownTitle:{textAlign:"left",fontSize:11,color:"#64748b",letterSpacing:1,marginBottom:16},
+  catRow:{display:"flex",alignItems:"center",gap:12,marginBottom:12},
+  catRowName:{color:"#cbd5e1",fontSize:13,width:120,textAlign:"left"},
+  catBarBg:{flex:1,height:8,background:"#222",borderRadius:4},
+  catBarFill:{height:"100%",borderRadius:4},
+  catPct:{color:"#64748b",fontSize:12,width:35},
+  certSection:{background:"#1c1c22",padding:"24px",borderRadius:20,marginTop:32,textAlign:"left"},
+  certTitle:{color:"#fbbf24",fontSize:18,fontWeight:700,marginBottom:4},
+  certSubtitle:{color:"#94a3b8",fontSize:13,marginBottom:16},
+  nameInput:{width:"100%",padding:"12px",background:"#0a0a0c",border:"1px solid #2d2d35",color:"#fff",borderRadius:8,marginBottom:12},
+  certBtn:{width:"100%",padding:"14px",background:COLORS.GOLD_DARK,color:"#fff",border:"none",borderRadius:10,fontWeight:700,cursor:"pointer"},
+  modal:{position:"fixed",inset:0,background:"rgba(0,0,0,0.9)",display:"flex",alignItems:"center",justifyContent:"center",padding:20},
+  modalCard:{background:"#141418",padding:"32px",borderRadius:24,maxWidth:400,width:"100%"},
+  modalTitle:{fontSize:24,color:"#fff",textAlign:"center",marginBottom:16},
+  modalPrice:{fontSize:48,color:"#fbbf24",textAlign:"center",fontWeight:900,margin:"20px 0"},
+  payBtn:{width:"100%",padding:"16px",background:"#fbbf24",color:"#000",borderRadius:12,fontWeight:900,border:"none",cursor:"pointer",marginBottom:12},
+  cancelBtn:{width:"100%",background:"transparent",color:"#64748b",border:"none",cursor:"pointer"}
 };
