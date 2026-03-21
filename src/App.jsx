@@ -40,93 +40,182 @@ function getIQLabel(iq) {
   if (iq >= 130) return { label: "Gifted / Very Superior", color: "#a78bfa" };
   if (iq >= 120) return { label: "Superior", color: "#60a5fa" };
   if (iq >= 110) return { label: "High Average", color: "#34d399" };
-  if (iq >= 90) return { label: "Average", color: "#fbbf24" };
-  if (iq >= 80) return { label: "Low Average", color: "#f97316" };
+  if (iq >= 90)  return { label: "Average", color: "#fbbf24" };
+  if (iq >= 80)  return { label: "Low Average", color: "#f97316" };
   return { label: "Below Average", color: "#f87171" };
 }
 
 function generateCertID() {
-  return "NMI-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+  return "NMI-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).substring(2,6).toUpperCase();
 }
 
-function drawCertificate(canvas, name, iq, label, certID, date, sealImg) {
+function getCatColor(pct) {
+  if (pct >= 75) return "#2ecc71";
+  if (pct >= 50) return "#f39c12";
+  return "#e74c3c";
+}
+
+function drawCertificate(canvas, name, iq, label, certID, date, sealImg, catScores) {
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
 
+  // Background
   ctx.fillStyle = "#fdfaf4";
   ctx.fillRect(0, 0, W, H);
 
+  // Borders
   ctx.strokeStyle = "#b8963e"; ctx.lineWidth = 6;
   ctx.strokeRect(18, 18, W-36, H-36);
   ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 2;
   ctx.strokeRect(28, 28, W-56, H-56);
 
+  // Corner dots
   [[40,40],[W-40,40],[40,H-40],[W-40,H-40]].forEach(([x,y]) => {
     ctx.fillStyle = "#b8963e";
     ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
   });
 
+  // Top deco lines
   ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(60,70); ctx.lineTo(W-60,70); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(60,74); ctx.lineTo(W-60,74); ctx.stroke();
 
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 22px Georgia, serif"; ctx.textAlign = "center";
-  ctx.fillText(AUTHORITY, W/2, 110);
-  ctx.fillStyle = "#6b5c3e"; ctx.font = "13px Georgia, serif";
-  ctx.fillText(AUTHORITY_TAGLINE, W/2, 132);
-
-  ctx.fillStyle = "#b8963e"; ctx.font = "italic 15px Georgia, serif";
-  ctx.fillText("Certificate of Cognitive Assessment", W/2, 168);
+  // Header
+  ctx.fillStyle = "#1a1040"; ctx.font = "bold 20px Georgia,serif"; ctx.textAlign = "center";
+  ctx.fillText(AUTHORITY, W/2, 108);
+  ctx.fillStyle = "#6b5c3e"; ctx.font = "12px Georgia,serif";
+  ctx.fillText(AUTHORITY_TAGLINE, W/2, 128);
+  ctx.fillStyle = "#b8963e"; ctx.font = "italic 14px Georgia,serif";
+  ctx.fillText("Certificate of Cognitive Assessment", W/2, 158);
 
   ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(100,182); ctx.lineTo(W-100,182); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(100,170); ctx.lineTo(W-100,170); ctx.stroke();
 
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "14px Georgia, serif";
-  ctx.fillText("This is to certify that", W/2, 215);
+  // Certify text
+  ctx.fillStyle = "#4a3f2f"; ctx.font = "13px Georgia,serif";
+  ctx.fillText("This is to certify that", W/2, 200);
 
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 32px Georgia, serif";
-  ctx.fillText(name || "Candidate", W/2, 260);
+  // Name
+  ctx.fillStyle = "#1a1040"; ctx.font = "bold 30px Georgia,serif";
+  ctx.fillText(name || "Candidate", W/2, 242);
   const nw = ctx.measureText(name || "Candidate").width;
   ctx.strokeStyle = "#b8963e"; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(W/2-nw/2,268); ctx.lineTo(W/2+nw/2,268); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2-nw/2,250); ctx.lineTo(W/2+nw/2,250); ctx.stroke();
 
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "14px Georgia, serif";
-  ctx.fillText("has successfully completed the NeuroMark Cognitive Assessment", W/2, 298);
-  ctx.fillText("and achieved an IQ Score of", W/2, 320);
+  ctx.fillStyle = "#4a3f2f"; ctx.font = "13px Georgia,serif";
+  ctx.fillText("has successfully completed the NeuroMark Cognitive Assessment", W/2, 276);
 
-  ctx.fillStyle = "#b8963e"; ctx.font = "bold 64px Georgia, serif";
-  ctx.fillText(iq, W/2, 395);
-
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 18px Georgia, serif";
-  ctx.fillText(label, W/2, 425);
+  // ── SCORE + BREAKDOWN SIDE BY SIDE ──
+  // Left: IQ score block
+  const scoreX = W/2 - 260;
+  const scoreBoxW = 220;
+  const scoreBoxH = 180;
+  const scoreBoxY = 292;
 
   ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(100,445); ctx.lineTo(W-100,445); ctx.stroke();
+  ctx.strokeRect(scoreX, scoreBoxY, scoreBoxW, scoreBoxH);
 
-  // Draw real seal image bottom left
+  ctx.fillStyle = "#b8963e"; ctx.font = "bold 58px Georgia,serif"; ctx.textAlign = "center";
+  ctx.fillText(iq, scoreX + scoreBoxW/2, scoreBoxY + 76);
+
+  ctx.fillStyle = "#1a1040"; ctx.font = "bold 16px Georgia,serif";
+  ctx.fillText(label, scoreX + scoreBoxW/2, scoreBoxY + 104);
+
+  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(scoreX+20, scoreBoxY+118); ctx.lineTo(scoreX+scoreBoxW-20, scoreBoxY+118); ctx.stroke();
+
+  ctx.fillStyle = "#6b5c3e"; ctx.font = "11px Georgia,serif";
+  ctx.fillText("IQ SCORE", scoreX + scoreBoxW/2, scoreBoxY + 136);
+  ctx.fillText("NeuroMark Assessment 2026", scoreX + scoreBoxW/2, scoreBoxY + 154);
+  ctx.fillText("NeuroMark Certified · 2026", scoreX + scoreBoxW/2, scoreBoxY + 170);
+
+  // Right: Category breakdown bars
+  const barX = W/2 - 20;
+  const barW = 290;
+  const barStartY = 300;
+  const barH = 14;
+  const barGap = 26;
+
+  ctx.fillStyle = "#4a3f2f"; ctx.font = "bold 11px Georgia,serif"; ctx.textAlign = "left";
+  ctx.fillText("COGNITIVE PROFILE", barX, barStartY - 8);
+
+  categories.forEach((cat, i) => {
+    const s = catScores[cat];
+    const pct = s && s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+    const y = barStartY + i * barGap;
+    const shortName = cat.replace(" / ", "/").replace("Reasoning","Rsng").replace("Recognition","Recog").replace("Numerical","Num").replace("Language","Lang").replace("Memory","Mem");
+
+    // Label
+    ctx.fillStyle = "#4a3f2f"; ctx.font = "10px Georgia,serif"; ctx.textAlign = "left";
+    ctx.fillText(shortName, barX, y + 10);
+
+    // Bar background
+    const bx = barX + 118;
+    ctx.fillStyle = "#e8dfc8";
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(bx, y, barW - 118, barH, 4) : ctx.rect(bx, y, barW - 118, barH);
+    ctx.fill();
+
+    // Bar fill
+    const fillW = Math.max(4, ((barW - 118) * pct) / 100);
+    ctx.fillStyle = getCatColor(pct);
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(bx, y, fillW, barH, 4) : ctx.rect(bx, y, fillW, barH);
+    ctx.fill();
+
+    // Pct label
+    ctx.fillStyle = "#6b5c3e"; ctx.font = "10px Georgia,serif"; ctx.textAlign = "right";
+    ctx.fillText(pct + "%", bx - 6, y + 11);
+  });
+
+  // Divider below score + breakdown
+  const divY = scoreBoxY + scoreBoxH + 18;
+  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(100, divY); ctx.lineTo(W-100, divY); ctx.stroke();
+
+  // Seal bottom left
   if (sealImg) {
-    ctx.drawImage(sealImg, 45, 460, 115, 115);
+    ctx.drawImage(sealImg, 44, divY + 10, 108, 108);
   }
 
+  // Signature
+  const sigY = divY + 30;
   ctx.strokeStyle = "#4a3f2f"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(250,525); ctx.lineTo(490,525); ctx.stroke();
-  ctx.fillStyle = "#1a1040"; ctx.font = "italic bold 15px Georgia, serif"; ctx.textAlign = "center";
-  ctx.fillText("Dr. A. Ravensworth", 370, 520);
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "11px Georgia, serif";
-  ctx.fillText("Chief Assessment Officer", 370, 538);
-  ctx.fillText(AUTHORITY, 370, 554);
+  ctx.beginPath(); ctx.moveTo(240, sigY + 48); ctx.lineTo(480, sigY + 48); ctx.stroke();
+  ctx.fillStyle = "#1a1040"; ctx.font = "italic bold 14px Georgia,serif"; ctx.textAlign = "center";
+  ctx.fillText("Dr. A. Ravensworth", 360, sigY + 44);
+  ctx.fillStyle = "#4a3f2f"; ctx.font = "10px Georgia,serif";
+  ctx.fillText("Chief Assessment Officer", 360, sigY + 60);
+  ctx.fillText(AUTHORITY, 360, sigY + 74);
 
-  ctx.textAlign = "right"; ctx.fillStyle = "#6b5c3e"; ctx.font = "11px Georgia, serif";
-  ctx.fillText("Date: " + date, W-50, 490);
-  ctx.fillText("Certificate ID: " + certID, W-50, 508);
-  ctx.fillText("Verify at neuromark.institute", W-50, 526);
+  // Right info
+  ctx.textAlign = "right"; ctx.fillStyle = "#6b5c3e"; ctx.font = "10px Georgia,serif";
+  ctx.fillText("Date: " + date, W-50, sigY + 36);
+  ctx.fillText("Certificate ID: " + certID, W-50, sigY + 52);
+  ctx.fillText("Verify at neuromark.institute", W-50, sigY + 68);
 
+  // Bottom lines
   ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(60,H-40); ctx.lineTo(W-60,H-40); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(60,H-36); ctx.lineTo(W-60,H-36); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(60,H-38); ctx.lineTo(W-60,H-38); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(60,H-34); ctx.lineTo(W-60,H-34); ctx.stroke();
+  ctx.textAlign = "center"; ctx.fillStyle = "#9a8060"; ctx.font = "9px Georgia,serif";
+  ctx.fillText("This certificate is issued for educational and entertainment purposes. " + AUTHORITY + " © " + new Date().getFullYear(), W/2, H-18);
+}
 
-  ctx.textAlign = "center"; ctx.fillStyle = "#9a8060"; ctx.font = "10px Georgia, serif";
-  ctx.fillText("This certificate is issued for educational and entertainment purposes. " + AUTHORITY + " © " + new Date().getFullYear(), W/2, H-20);
+function canvasToPDF(canvas, name) {
+  const imgData = canvas.toDataURL("image/jpeg", 0.98);
+  const win = window.open("", "_blank");
+  win.document.write(`<!DOCTYPE html><html><head><title>IQ Certificate - ${name}</title>
+    <style>
+      @page { size: A4 landscape; margin: 0; }
+      * { margin:0; padding:0; box-sizing:border-box; }
+      body { width:297mm; height:210mm; display:flex; align-items:center; justify-content:center; background:white; }
+      img { width:297mm; height:210mm; object-fit:contain; }
+    </style></head><body>
+    <img src="${imgData}"/>
+    <script>window.onload=function(){setTimeout(function(){window.print();},500);};</script>
+    </body></html>`);
+  win.document.close();
 }
 
 export default function IQTest() {
@@ -142,67 +231,70 @@ export default function IQTest() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [paid, setPaid] = useState(false);
   const [certGenerated, setCertGenerated] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (screen === "test") {
       timerRef.current = setInterval(() => {
-        setTimeLeft(t => { if (t <= 1) { clearInterval(timerRef.current); setScreen("result"); return 0; } return t-1; });
+        setTimeLeft(t => { if (t<=1){clearInterval(timerRef.current);setScreen("result");return 0;} return t-1; });
       }, 1000);
     }
     return () => clearInterval(timerRef.current);
   }, [screen]);
 
   const handleNext = () => {
-    if (selected === null) return;
-    const newAnswers = { ...answers, [current]: selected };
-    setAnswers(newAnswers);
-    setSelected(null);
-    if (current+1 >= QUESTIONS.length) { clearInterval(timerRef.current); setScreen("result"); }
-    else setCurrent(c => c+1);
+    if (selected===null) return;
+    const na = {...answers,[current]:selected};
+    setAnswers(na); setSelected(null);
+    if (current+1>=QUESTIONS.length){clearInterval(timerRef.current);setScreen("result");}
+    else setCurrent(c=>c+1);
   };
 
-  const formatTime = (s) => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+  const formatTime = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
 
   const computeResults = () => {
-    let correct = 0;
-    const catScores = {};
-    categories.forEach(c => catScores[c] = { correct:0, total:0 });
-    QUESTIONS.forEach((q,i) => {
+    let correct=0;
+    const catScores={};
+    categories.forEach(c=>catScores[c]={correct:0,total:0});
+    QUESTIONS.forEach((q,i)=>{
       catScores[q.category].total++;
-      if (answers[i] === q.answer) { correct++; catScores[q.category].correct++; }
+      if(answers[i]===q.answer){correct++;catScores[q.category].correct++;}
     });
-    const iq = getIQScore(correct, QUESTIONS.length, timeLeft);
-    return { correct, total: QUESTIONS.length, iq, catScores, timeUsed: TOTAL_TIME-timeLeft };
+    return {correct,total:QUESTIONS.length,iq:getIQScore(correct,QUESTIONS.length,timeLeft),catScores,timeUsed:TOTAL_TIME-timeLeft};
   };
 
-  const generateAndDownload = () => {
-    const { iq } = computeResults();
-    const { label } = getIQLabel(iq);
+  const generateCert = (callback) => {
+    const {iq,catScores} = computeResults();
+    const {label} = getIQLabel(iq);
     const canvas = canvasRef.current;
-    canvas.width = 900; canvas.height = 630;
-    const date = new Date().toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" });
-    const sealImg = new Image();
-    sealImg.crossOrigin = "anonymous";
-    sealImg.src = "/Seal.png";
-    const finish = (img) => {
-      drawCertificate(canvas, certName, iq, label, certID, date, img);
-      setCertGenerated(true);
-      const link = document.createElement("a");
-      link.download = `IQ-Certificate-${certName||"Candidate"}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+    canvas.width=1200; canvas.height=848;
+    const date = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+    setGenerating(true);
+    const tryLoad = (src, onDone) => {
+      const img = new Image();
+      img.crossOrigin="anonymous"; img.src=src;
+      img.onload=()=>onDone(img);
+      img.onerror=()=>onDone(null);
     };
-    sealImg.onload = () => finish(sealImg);
-    sealImg.onerror = () => finish(null);
+    tryLoad("/seal.png", img => {
+      if(img){finish(img);}
+      else tryLoad("/Seal.png", img2=>finish(img2));
+    });
+    const finish = (sealImg) => {
+      drawCertificate(canvas,certName,iq,label,certID,date,sealImg,catScores);
+      setGenerating(false); setCertGenerated(true);
+      callback(canvas);
+    };
   };
 
-  const handlePayment = () => { setPaid(true); setShowPaywall(false); };
+  const handleDownloadPDF = () => generateCert(canvas=>canvasToPDF(canvas,certName));
+  const handlePayment = () => {setPaid(true);setShowPaywall(false);};
 
-  const progress = (current / QUESTIONS.length) * 100;
-  const timerUrgent = timeLeft < 120;
-  const q = QUESTIONS[current];
+  const progress=(current/QUESTIONS.length)*100;
+  const timerUrgent=timeLeft<120;
+  const q=QUESTIONS[current];
 
-  if (screen === "intro") return (
+  if(screen==="intro") return (
     <div style={S.page}>
       <div style={S.card}>
         <div style={S.badge}>COGNITIVE ASSESSMENT</div>
@@ -218,14 +310,14 @@ export default function IQTest() {
           <div style={S.infoBox}><span style={S.infoNum}>20</span><span style={S.infoLabel}>Minutes</span></div>
           <div style={S.infoBox}><span style={S.infoNum}>145</span><span style={S.infoLabel}>Max IQ</span></div>
         </div>
-        <div style={S.certPreview}>🎓 <strong style={{color:"#fbbf24"}}>Official Certificate Available</strong> — Download your verified IQ certificate with the NeuroMark seal for {CERT_PRICE}</div>
+        <div style={S.certPreview}>🎓 <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> — Download with NeuroMark seal + your cognitive profile breakdown for {CERT_PRICE}</div>
         <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment →</button>
         <p style={S.disclaimer}>Issued by {AUTHORITY} · For educational purposes</p>
       </div>
     </div>
   );
 
-  if (screen === "test") return (
+  if(screen==="test") return (
     <div style={S.page}>
       <div style={S.testCard}>
         <div style={S.testHeader}>
@@ -245,7 +337,7 @@ export default function IQTest() {
           ))}
         </div>
         <div style={{display:"flex",gap:12,marginTop:8}}>
-          {current>0 && <button style={S.skipBtn} onClick={()=>{setCurrent(c=>c-1);setSelected(answers[current-1]??null);}}>← Back</button>}
+          {current>0&&<button style={S.skipBtn} onClick={()=>{setCurrent(c=>c-1);setSelected(answers[current-1]??null);}}>← Back</button>}
           <button style={{...S.nextBtn,opacity:selected===null?0.4:1,flex:1}} disabled={selected===null} onClick={handleNext}>
             {current+1===QUESTIONS.length?"Submit Test ✓":"Next Question →"}
           </button>
@@ -254,10 +346,10 @@ export default function IQTest() {
     </div>
   );
 
-  if (screen === "result") {
-    const { correct, total, iq, catScores, timeUsed } = computeResults();
-    const { label, color } = getIQLabel(iq);
-    const mins = Math.floor(timeUsed/60), secs = timeUsed%60;
+  if(screen==="result") {
+    const {correct,total,iq,catScores,timeUsed}=computeResults();
+    const {label,color}=getIQLabel(iq);
+    const mins=Math.floor(timeUsed/60),secs=timeUsed%60;
     return (
       <div style={S.page}>
         <div style={S.resultCard}>
@@ -296,15 +388,18 @@ export default function IQTest() {
           <div style={S.certSection}>
             <div style={S.certHeader}>
               <span style={{fontSize:28}}>🎓</span>
-              <div><div style={S.certTitle}>Official IQ Certificate</div><div style={S.certSubtitle}>With real NeuroMark Institute seal</div></div>
+              <div>
+                <div style={S.certTitle}>Official PDF Certificate</div>
+                <div style={S.certSubtitle}>With seal + cognitive profile breakdown included</div>
+              </div>
               <div style={S.certPrice}>{CERT_PRICE}</div>
             </div>
             <div style={S.certFeatures}>
-              {["Official NeuroMark seal","Your name & IQ score","Unique certificate ID","Download as image"].map(f=>(
+              {["NeuroMark seal","IQ score & classification","Cognitive profile bars","A4 PDF — print ready"].map(f=>(
                 <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>✓</span> {f}</div>
               ))}
             </div>
-            {!paid ? (
+            {!paid?(
               <>
                 <input style={S.nameInput} placeholder="Enter your full name for the certificate" value={certName} onChange={e=>setCertName(e.target.value)} maxLength={40}/>
                 <button style={S.certBtn} onClick={()=>{if(certName.trim())setShowPaywall(true);}}>
@@ -314,10 +409,10 @@ export default function IQTest() {
               </>
             ):(
               <div style={{textAlign:"center"}}>
-                <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)"}} onClick={generateAndDownload}>
-                  ⬇️ Download Certificate
+                <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}} onClick={handleDownloadPDF} disabled={generating}>
+                  {generating?"⏳ Generating...":"📄 Download PDF Certificate"}
                 </button>
-                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Downloaded! Share on LinkedIn & WhatsApp 🎉</p>}
+                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Print dialog opened — choose "Save as PDF" 🎉</p>}
               </div>
             )}
           </div>
@@ -330,8 +425,8 @@ export default function IQTest() {
                 <div style={S.modalName}>{certName}</div>
                 <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> — {label}</div>
                 <div style={S.modalPrice}>{CERT_PRICE} only</div>
-                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 16px"}}>One-time · Instant download · Official seal</p>
-                <button style={S.payBtn} onClick={handlePayment}>Pay {CERT_PRICE} & Download</button>
+                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 16px"}}>One-time · Instant PDF · Seal + profile included</p>
+                <button style={S.payBtn} onClick={handlePayment}>Pay {CERT_PRICE} & Download PDF</button>
                 <button style={S.cancelBtn} onClick={()=>setShowPaywall(false)}>Cancel</button>
                 <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:8}}>🔒 Secure payment · No subscription</p>
               </div>
@@ -349,7 +444,7 @@ export default function IQTest() {
   }
 }
 
-const S = {
+const S={
   page:{minHeight:"100vh",background:"linear-gradient(135deg,#0f0c29 0%,#1a1040 50%,#0f0c29 100%)",display:"flex",justifyContent:"center",alignItems:"flex-start",padding:"32px 16px",fontFamily:"'Georgia',serif"},
   card:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:24,padding:"48px 40px",maxWidth:540,width:"100%",textAlign:"center",backdropFilter:"blur(20px)",boxShadow:"0 0 80px rgba(167,139,250,0.1)"},
   badge:{display:"inline-block",background:"rgba(167,139,250,0.15)",color:"#a78bfa",border:"1px solid rgba(167,139,250,0.4)",borderRadius:100,padding:"4px 16px",fontSize:11,letterSpacing:3,fontFamily:"monospace",marginBottom:20},
