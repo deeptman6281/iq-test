@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { jsPDF } from "jspdf";
 
 const AUTHORITY = "NeuroMark Institute";
 const AUTHORITY_TAGLINE = "Global Centre for Cognitive Assessment";
@@ -275,21 +276,6 @@ function generateVectorPDF(name, iq, label, certID, date, catScores) {
   pdf.text("Chief Assessment Officer", W / 2, 166, { align: "center" });
 
   pdf.save(`IQ_Certificate_${name}.pdf`);
-}
-function canvasToPDF(canvas, name) {
-  const imgData = canvas.toDataURL("image/jpeg", 0.98);
-  const win = window.open("", "_blank");
-  win.document.write(`<!DOCTYPE html><html><head><title>IQ Certificate - ${name}</title>
-    <style>
-      @page { size: A4 landscape; margin: 0; }
-      * { margin:0; padding:0; box-sizing:border-box; }
-      body { width:297mm; height:210mm; display:flex; align-items:center; justify-content:center; background:white; }
-      img { width:297mm; height:210mm; object-fit:contain; }
-    </style></head><body>
-    <img src="${imgData}"/>
-    <script>window.onload=function(){setTimeout(function(){window.print();},500);};<\/script>
-    </body></html>`);
-  win.document.close();
 }
 
 export default function IQTest() {
