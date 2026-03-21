@@ -31,8 +31,8 @@ const QUESTIONS = [
 const TOTAL_TIME = 20 * 60;
 const categories = [...new Set(QUESTIONS.map(q => q.category))];
 
-// ── Seal is in repo ROOT → Vite serves it at /Seal.png ──
-const SEAL_URL = "/Seal.png";
+const SEAL_URL  = "/Seal.png";
+const BRAIN_URL = "/brain.png";
 
 function getIQScore(correct, total, timeLeft) {
   const base = (correct / total) * 100;
@@ -50,7 +50,8 @@ function getIQLabel(iq) {
 }
 
 function generateCertID() {
-  return "NMI-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).substring(2,6).toUpperCase();
+  return "NM1-" + Math.random().toString(36).substring(2, 6).toUpperCase() +
+         Math.random().toString(36).substring(2, 6).toUpperCase() + "-USRK";
 }
 
 function getCatColor(pct) {
@@ -59,223 +60,255 @@ function getCatColor(pct) {
   return "#e74c3c";
 }
 
-function drawCertificate(canvas, name, iq, label, certID, date, catScores, sealImg) {
-  const ctx = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height;
-
-  ctx.fillStyle = "#fdfaf4";
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.strokeStyle = "#b8963e"; ctx.lineWidth = 6;
-  ctx.strokeRect(18, 18, W-36, H-36);
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 2;
-  ctx.strokeRect(28, 28, W-56, H-56);
-
-  [[40,40],[W-40,40],[40,H-40],[W-40,H-40]].forEach(([x,y]) => {
-    ctx.fillStyle = "#b8963e";
-    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
+// ─── Helper: load image as data URL ──────────────────────
+function loadImageAsDataURL(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      c.width = img.width; c.height = img.height;
+      c.getContext("2d").drawImage(img, 0, 0);
+      resolve(c.toDataURL("image/png"));
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
   });
-
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(60,70); ctx.lineTo(W-60,70); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(60,74); ctx.lineTo(W-60,74); ctx.stroke();
-
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 20px Georgia,serif"; ctx.textAlign = "center";
-  ctx.fillText(AUTHORITY, W/2, 108);
-  ctx.fillStyle = "#6b5c3e"; ctx.font = "12px Georgia,serif";
-  ctx.fillText(AUTHORITY_TAGLINE, W/2, 128);
-  ctx.fillStyle = "#b8963e"; ctx.font = "italic 14px Georgia,serif";
-  ctx.fillText("Certificate of Cognitive Assessment", W/2, 158);
-
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(100,170); ctx.lineTo(W-100,170); ctx.stroke();
-
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "13px Georgia,serif";
-  ctx.fillText("This is to certify that", W/2, 200);
-
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 30px Georgia,serif";
-  ctx.fillText(name || "Candidate", W/2, 242);
-  const nw = ctx.measureText(name || "Candidate").width;
-  ctx.strokeStyle = "#b8963e"; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(W/2-nw/2,250); ctx.lineTo(W/2+nw/2,250); ctx.stroke();
-
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "13px Georgia,serif";
-  ctx.fillText("has successfully completed the NeuroMark Cognitive Assessment", W/2, 276);
-
-  // Score box left
-  const scoreX = W/2 - 260;
-  const scoreBoxW = 220, scoreBoxH = 180, scoreBoxY = 292;
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.strokeRect(scoreX, scoreBoxY, scoreBoxW, scoreBoxH);
-
-  ctx.fillStyle = "#b8963e"; ctx.font = "bold 58px Georgia,serif"; ctx.textAlign = "center";
-  ctx.fillText(iq, scoreX + scoreBoxW/2, scoreBoxY + 76);
-
-  ctx.fillStyle = "#1a1040"; ctx.font = "bold 16px Georgia,serif";
-  ctx.fillText(label, scoreX + scoreBoxW/2, scoreBoxY + 104);
-
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 0.8;
-  ctx.beginPath(); ctx.moveTo(scoreX+20, scoreBoxY+118); ctx.lineTo(scoreX+scoreBoxW-20, scoreBoxY+118); ctx.stroke();
-
-  ctx.fillStyle = "#6b5c3e"; ctx.font = "11px Georgia,serif";
-  ctx.fillText("IQ SCORE", scoreX + scoreBoxW/2, scoreBoxY + 136);
-  ctx.fillText("NeuroMark Assessment 2026", scoreX + scoreBoxW/2, scoreBoxY + 154);
-  ctx.fillText("NeuroMark Certified · 2026", scoreX + scoreBoxW/2, scoreBoxY + 170);
-
-  // Category bars right
-  const barX = W/2 - 20;
-  const barW = 290, barStartY = 300, barH = 14, barGap = 26;
-
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "bold 11px Georgia,serif"; ctx.textAlign = "left";
-  ctx.fillText("COGNITIVE PROFILE", barX, barStartY - 8);
-
-  categories.forEach((cat, i) => {
-    const s = catScores[cat];
-    const pct = s && s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-    const y = barStartY + i * barGap;
-    const shortName = cat.replace(" / ","/").replace("Reasoning","Rsng").replace("Recognition","Recog").replace("Numerical","Num").replace("Language","Lang").replace("Memory","Mem");
-
-    ctx.fillStyle = "#4a3f2f"; ctx.font = "10px Georgia,serif"; ctx.textAlign = "left";
-    ctx.fillText(shortName, barX, y + 10);
-
-    const bx = barX + 118;
-    ctx.fillStyle = "#e8dfc8";
-    ctx.fillRect(bx, y, barW - 118, barH);
-
-    const fillW = Math.max(4, ((barW - 118) * pct) / 100);
-    ctx.fillStyle = getCatColor(pct);
-    ctx.fillRect(bx, y, fillW, barH);
-
-    ctx.fillStyle = "#6b5c3e"; ctx.font = "10px Georgia,serif"; ctx.textAlign = "right";
-    ctx.fillText(pct + "%", bx - 6, y + 11);
-  });
-
-  const divY = scoreBoxY + scoreBoxH + 18;
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(100,divY); ctx.lineTo(W-100,divY); ctx.stroke();
-
-  // Draw seal if loaded
-  if (sealImg) {
-    ctx.drawImage(sealImg, 44, divY + 8, 112, 112);
-  }
-
-  // Signature
-  const sigY = divY + 28;
-  ctx.strokeStyle = "#4a3f2f"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(240,sigY+50); ctx.lineTo(480,sigY+50); ctx.stroke();
-  ctx.fillStyle = "#1a1040"; ctx.font = "italic bold 14px Georgia,serif"; ctx.textAlign = "center";
-  ctx.fillText("Dr. A. Ravensworth", 360, sigY+46);
-  ctx.fillStyle = "#4a3f2f"; ctx.font = "10px Georgia,serif";
-  ctx.fillText("Chief Assessment Officer", 360, sigY+62);
-  ctx.fillText(AUTHORITY, 360, sigY+76);
-
-  ctx.textAlign = "right"; ctx.fillStyle = "#6b5c3e"; ctx.font = "10px Georgia,serif";
-  ctx.fillText("Date: " + date, W-50, sigY+36);
-  ctx.fillText("Certificate ID: " + certID, W-50, sigY+52);
-  ctx.fillText("Verify at neuromark.institute", W-50, sigY+68);
-
-  ctx.strokeStyle = "#d4af5a"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(60,H-38); ctx.lineTo(W-60,H-38); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(60,H-34); ctx.lineTo(W-60,H-34); ctx.stroke();
-  ctx.textAlign = "center"; ctx.fillStyle = "#9a8060"; ctx.font = "9px Georgia,serif";
-  ctx.fillText("This certificate is issued for educational and entertainment purposes. " + AUTHORITY + " © " + new Date().getFullYear(), W/2, H-18);
 }
-function generateVectorPDF(name, iq, label, certID, date, catScores) {
-  
 
-  const pdf = new jsPDF({
-    orientation: "landscape",
-    unit: "mm",
-    format: "a4",
-  });
+// ─── Draw decorative side border ornament ────────────────
+function drawSideBorder(pdf, x, yStart, yEnd, side) {
+  const gold = [184, 150, 62];
+  const lightGold = [212, 175, 90];
+  pdf.setDrawColor(...gold);
+  pdf.setLineWidth(0.4);
 
-  const W = 297;
-  const H = 210;
+  // Vertical line
+  pdf.line(x, yStart, x, yEnd);
 
+  // Repeating diamond ornaments
+  const step = 8;
+  for (let y = yStart + 4; y < yEnd - 4; y += step) {
+    const size = 1.5;
+    pdf.setFillColor(...lightGold);
+    // Small diamond shape
+    pdf.triangle(x, y - size, x - size, y, x, y + size, "F");
+    pdf.triangle(x, y - size, x + size, y, x, y + size, "F");
+  }
+}
+
+// ─── Main PDF generator ───────────────────────────────────
+async function generateVectorPDF(name, iq, label, certID, date, catScores) {
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const W = 297, H = 210;
+
+  // ── Background ──────────────────────────────────────────
   pdf.setFillColor(253, 250, 244);
   pdf.rect(0, 0, W, H, "F");
 
+  // ── Outer gold border ───────────────────────────────────
   pdf.setDrawColor(184, 150, 62);
-  pdf.setLineWidth(1.5);
-  pdf.rect(10, 10, W - 20, H - 20);
+  pdf.setLineWidth(1.2);
+  pdf.rect(6, 6, W - 12, H - 12);
 
   pdf.setDrawColor(212, 175, 90);
-  pdf.setLineWidth(0.5);
-  pdf.rect(14, 14, W - 28, H - 28);
+  pdf.setLineWidth(0.4);
+  pdf.rect(9, 9, W - 18, H - 18);
 
-  pdf.setFont("times", "bold");
-  pdf.setFontSize(26);
-  pdf.text("NEUROMARK INSTITUTE", W / 2, 30, { align: "center" });
+  // ── Decorative side borders ─────────────────────────────
+  drawSideBorder(pdf, 16, 12, H - 12, "left");
+  drawSideBorder(pdf, W - 16, 12, H - 12, "right");
 
-  pdf.setFontSize(14);
-  pdf.text("Global Centre for Cognitive Assessment", W / 2, 38, { align: "center" });
-
-  pdf.setFont("times", "italic");
-  pdf.setFontSize(16);
-  pdf.text("Certificate of Cognitive Assessment", W / 2, 48, { align: "center" });
-
-  pdf.line(30, 52, W - 30, 52);
-
-  pdf.setFont("times", "normal");
-  pdf.setFontSize(14);
-  pdf.text("This is to certify that", W / 2, 65, { align: "center" });
-
-  pdf.setFont("times", "bold");
-  pdf.setFontSize(28);
-  pdf.text(name || "Candidate", W / 2, 78, { align: "center" });
-
-  pdf.line(W / 2 - 50, 82, W / 2 + 50, 82);
-
-  pdf.setFontSize(12);
-  pdf.text(
-    "has successfully completed the NeuroMark Cognitive Assessment",
-    W / 2,
-    92,
-    { align: "center" }
-  );
-
-  pdf.rect(30, 105, 60, 45);
-
-  pdf.setFontSize(28);
-  pdf.text(String(iq), 60, 125, { align: "center" });
-
-  pdf.setFontSize(12);
-  pdf.text(label, 60, 135, { align: "center" });
-
-  pdf.setFontSize(10);
-  pdf.text("IQ SCORE", 60, 145, { align: "center" });
-
-  let y = 110;
-  pdf.setFontSize(10);
-  pdf.text("COGNITIVE PROFILE", 110, 100);
-
-  Object.keys(catScores).forEach((cat) => {
-    const s = catScores[cat];
-    const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
-
-    pdf.text(cat, 110, y);
-
-    pdf.setFillColor(230, 220, 200);
-    pdf.rect(150, y - 4, 100, 4, "F");
-
-    pdf.setFillColor(47, 111, 79);
-    pdf.rect(150, y - 4, (pct / 100) * 100, 4, "F");
-
-    pdf.text(pct + "%", 255, y, { align: "right" });
-
-    y += 10;
+  // Corner circles
+  [[12,12],[W-12,12],[12,H-12],[W-12,H-12]].forEach(([cx,cy]) => {
+    pdf.setFillColor(184, 150, 62);
+    pdf.circle(cx, cy, 2, "F");
   });
 
-  pdf.text("Date: " + date, W - 20, 160, { align: "right" });
-  pdf.text("Certificate ID: " + certID, W - 20, 166, { align: "right" });
+  // ── Load images ─────────────────────────────────────────
+  const [sealData, brainData] = await Promise.all([
+    loadImageAsDataURL(SEAL_URL),
+    loadImageAsDataURL(BRAIN_URL),
+  ]);
 
-  pdf.setFont("times", "italic");
-  pdf.text("Dr. A. Ravensworth", W / 2, 160, { align: "center" });
+  // ── Brain logos left & right of title ───────────────────
+  const brainSize = 18;
+  const titleY = 22;
+  if (brainData) {
+    pdf.addImage(brainData, "PNG", W/2 - 52 - brainSize, titleY - 12, brainSize, brainSize);
+    pdf.addImage(brainData, "PNG", W/2 + 52, titleY - 12, brainSize, brainSize);
+  }
+
+  // ── Header text ─────────────────────────────────────────
+  pdf.setTextColor(26, 16, 64);
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(20);
+  pdf.text("NEUROMARK INSTITUTE", W/2, titleY, { align: "center" });
 
   pdf.setFont("times", "normal");
-  pdf.text("Chief Assessment Officer", W / 2, 166, { align: "center" });
+  pdf.setFontSize(11);
+  pdf.setTextColor(107, 92, 62);
+  pdf.text("Global Centre for Cognitive Assessment", W/2, titleY + 8, { align: "center" });
 
-  pdf.save(`IQ_Certificate_${name}.pdf`);
+  // ── Certificate title (italic gold) ─────────────────────
+  pdf.setFont("times", "italic");
+  pdf.setFontSize(15);
+  pdf.setTextColor(184, 150, 62);
+  pdf.text("Certificate of Cognitive Assessment", W/2, titleY + 18, { align: "center" });
+
+  // ── Divider line ─────────────────────────────────────────
+  pdf.setDrawColor(184, 150, 62);
+  pdf.setLineWidth(0.5);
+  pdf.line(25, titleY + 22, W - 25, titleY + 22);
+
+  // ── "This is to certify that" ────────────────────────────
+  pdf.setFont("times", "normal");
+  pdf.setFontSize(12);
+  pdf.setTextColor(74, 63, 47);
+  pdf.text("This is to certify that", W/2, titleY + 32, { align: "center" });
+
+  // ── Candidate name ───────────────────────────────────────
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(26);
+  pdf.setTextColor(26, 16, 64);
+  pdf.text(name || "Candidate", W/2, titleY + 44, { align: "center" });
+
+  // Name underline
+  const nameWidth = pdf.getTextWidth(name || "Candidate");
+  pdf.setDrawColor(184, 150, 62);
+  pdf.setLineWidth(0.4);
+  pdf.line(W/2 - nameWidth/2, titleY + 46, W/2 + nameWidth/2, titleY + 46);
+
+  // ── Completed text ───────────────────────────────────────
+  pdf.setFont("times", "normal");
+  pdf.setFontSize(11);
+  pdf.setTextColor(74, 63, 47);
+  pdf.text("has successfully completed the NeuroMark Cognitive Assessment", W/2, titleY + 55, { align: "center" });
+
+  // ── IQ Score box (left) ──────────────────────────────────
+  const boxX = 25, boxY = 100, boxW = 68, boxH = 52;
+
+  // Box with gold border
+  pdf.setDrawColor(184, 150, 62);
+  pdf.setFillColor(253, 250, 244);
+  pdf.setLineWidth(0.8);
+  pdf.roundedRect(boxX, boxY, boxW, boxH, 3, 3, "FD");
+
+  // IQ number
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(36);
+  pdf.setTextColor(184, 150, 62);
+  pdf.text(String(iq), boxX + boxW/2, boxY + 22, { align: "center" });
+
+  // Label
+  pdf.setFontSize(13);
+  pdf.setTextColor(26, 16, 64);
+  pdf.text(label, boxX + boxW/2, boxY + 32, { align: "center" });
+
+  // Inner divider
+  pdf.setDrawColor(212, 175, 90);
+  pdf.setLineWidth(0.3);
+  pdf.line(boxX + 6, boxY + 36, boxX + boxW - 6, boxY + 36);
+
+  // Sub text
+  pdf.setFont("times", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(107, 92, 62);
+  pdf.text("IQ SCORE", boxX + boxW/2, boxY + 41, { align: "center" });
+  pdf.text("NeuroMark Assessment 2026", boxX + boxW/2, boxY + 46, { align: "center" });
+  pdf.text("NeuroMark Certified - 2026", boxX + boxW/2, boxY + 51, { align: "center" });
+
+  // ── Cognitive Profile bars (right of box) ────────────────
+  const profileX = 105, profileStartY = 100;
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(26, 16, 64);
+  pdf.text("COGNITIVE PROFILE", profileX, profileStartY - 2);
+
+  const barMaxW = 100, barH = 5, barGap = 11;
+
+  Object.keys(catScores).forEach((cat, i) => {
+    const s = catScores[cat];
+    const pct = s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0;
+    const y = profileStartY + i * barGap;
+
+    const shortName = cat.replace(" / ","/").replace("Reasoning","Rsng").replace("Recognition","Recog").replace("Numerical","Num").replace("Language","Lang").replace("Memory","Mem");
+
+    // Category name
+    pdf.setFont("times", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(74, 63, 47);
+    pdf.text(shortName, profileX, y + barH - 1);
+
+    // Percentage label
+    pdf.text(pct + "%", profileX + 38, y + barH - 1, { align: "right" });
+
+    // Bar background
+    pdf.setFillColor(232, 223, 200);
+    pdf.rect(profileX + 40, y, barMaxW, barH, "F");
+
+    // Bar fill with color based on score
+    const col = getCatColor(pct);
+    const r = parseInt(col.slice(1,3),16);
+    const g = parseInt(col.slice(3,5),16);
+    const b = parseInt(col.slice(5,7),16);
+    pdf.setFillColor(r, g, b);
+    const fillW = Math.max(1, (barMaxW * pct) / 100);
+    pdf.rect(profileX + 40, y, fillW, barH, "F");
+
+    // Percentage text on bar
+    if (pct > 10) {
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(6.5);
+      pdf.text(pct + "%", profileX + 40 + fillW - 2, y + barH - 1, { align: "right" });
+    }
+  });
+
+  // ── Bottom divider ────────────────────────────────────────
+  pdf.setDrawColor(184, 150, 62);
+  pdf.setLineWidth(0.5);
+  pdf.line(25, 162, W - 25, 162);
+
+  // ── Seal (center bottom) ──────────────────────────────────
+  const sealSize = 28;
+  if (sealData) {
+    pdf.addImage(sealData, "PNG", W/2 - sealSize/2, 164, sealSize, sealSize);
+  }
+
+  // ── Signature (left of seal) ──────────────────────────────
+  pdf.setFont("times", "italic");
+  pdf.setFontSize(13);
+  pdf.setTextColor(26, 16, 64);
+  pdf.text("Dr. A. Ravensworth", W/2 - 40, 173, { align: "center" });
+
+  pdf.setDrawColor(74, 63, 47);
+  pdf.setLineWidth(0.3);
+  pdf.line(W/2 - 75, 175, W/2 - 5, 175);
+
+  pdf.setFont("times", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(74, 63, 47);
+  pdf.text("Chief Assessment Officer", W/2 - 40, 180, { align: "center" });
+  pdf.text("NeuroMark Institute", W/2 - 40, 185, { align: "center" });
+
+  // ── Date & Cert ID (right) ────────────────────────────────
+  pdf.setFont("times", "normal");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(107, 92, 62);
+  pdf.text("Date: " + date, W - 22, 173, { align: "right" });
+  pdf.text("Certificate ID: " + certID, W - 22, 180, { align: "right" });
+  pdf.text("Verify at neuromark.institute", W - 22, 187, { align: "right" });
+
+  // ── Footer ────────────────────────────────────────────────
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(154, 128, 96);
+  pdf.text(
+    "This certificate is issued for educational and entertainment purposes. NeuroMark Institute © " + new Date().getFullYear(),
+    W/2, H - 8, { align: "center" }
+  );
+
+  // ── Save ──────────────────────────────────────────────────
+  pdf.save(`IQ_Certificate_${name || "Candidate"}.pdf`);
 }
 
 export default function IQTest() {
@@ -292,15 +325,6 @@ export default function IQTest() {
   const [paid, setPaid] = useState(false);
   const [certGenerated, setCertGenerated] = useState(false);
   const [generating, setGenerating] = useState(false);
-
-  // Pre-load seal image on mount so it's ready for canvas
-  const sealRef = useRef(null);
-  useEffect(() => {
-    const img = new Image();
-    img.src = SEAL_URL;
-    img.onload = () => { sealRef.current = img; };
-    img.onerror = () => { sealRef.current = null; };
-  }, []);
 
   useEffect(() => {
     if (screen === "test") {
@@ -332,19 +356,17 @@ export default function IQTest() {
     return {correct,total:QUESTIONS.length,iq:getIQScore(correct,QUESTIONS.length,timeLeft),catScores,timeUsed:TOTAL_TIME-timeLeft};
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const {iq, catScores} = computeResults();
     const {label} = getIQLabel(iq);
-    const canvas = canvasRef.current;
-    canvas.width = 1200; canvas.height = 848;
     const date = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
     setGenerating(true);
-    setTimeout(() => {
-      drawCertificate(canvas, certName, iq, label, certID, date, catScores, sealRef.current);
-      setGenerating(false);
+    try {
+      await generateVectorPDF(certName, iq, label, certID, date, catScores);
       setCertGenerated(true);
-      generateVectorPDF(certName, iq, label, certID, date, catScores);
-    }, 150);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handlePayment = () => { setPaid(true); setShowPaywall(false); };
@@ -451,7 +473,7 @@ export default function IQTest() {
               <div style={S.certPrice}>{CERT_PRICE}</div>
             </div>
             <div style={S.certFeatures}>
-              {["NeuroMark seal","IQ score & classification","Cognitive profile bars","A4 PDF — print ready"].map(f=>(
+              {["NeuroMark seal","IQ score & classification","Cognitive profile bars","Direct PDF download"].map(f=>(
                 <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>✓</span> {f}</div>
               ))}
             </div>
@@ -468,7 +490,7 @@ export default function IQTest() {
                 <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}} onClick={handleDownloadPDF} disabled={generating}>
                   {generating?"⏳ Generating...":"📄 Download PDF Certificate"}
                 </button>
-                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Certificate downloaded successfully 🎉</p>}
+                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Certificate downloaded successfully! 🎉</p>}
               </div>
             )}
           </div>
