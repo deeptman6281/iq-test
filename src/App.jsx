@@ -181,7 +181,7 @@ function drawCertificate(canvas, name, iq, label, certID, date, catScores, sealI
   ctx.fillText("This certificate is issued for educational and entertainment purposes. " + AUTHORITY + " © " + new Date().getFullYear(), W/2, H-18);
 }
 function generateVectorPDF(name, iq, label, certID, date, catScores) {
-  const { jsPDF } = require("jspdf");
+  
 
   const pdf = new jsPDF({
     orientation: "landscape",
@@ -468,7 +468,7 @@ export default function IQTest() {
                 <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}} onClick={handleDownloadPDF} disabled={generating}>
                   {generating?"⏳ Generating...":"📄 Download PDF Certificate"}
                 </button>
-                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Print dialog opened — choose "Save as PDF" 🎉</p>}
+                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Certificate downloaded successfully 🎉</p>}
               </div>
             )}
           </div>
