@@ -516,29 +516,63 @@ export default function IQTest() {
           </div>
 
           {/* Paywall modal */}
+          
           {showPaywall && (
             <div style={S.modal}>
               <div style={S.modalCard}>
                 <div style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>🏆</div>
+
                 <div style={S.modalTitle}>Complete Your Certificate</div>
                 <div style={S.modalName}>{certName}</div>
-                <div style={S.modalIQ}>IQ Score: <strong style={{ color: "#a78bfa" }}>{iq}</strong> — {label}</div>
+
+                <div style={S.modalIQ}>
+                  IQ Score: <strong style={{ color: "#a78bfa" }}>{iq}</strong> — {label}
+                </div>
+
                 <div style={S.modalPrice}>{CERT_PRICE} only</div>
+
                 <p style={{ color: "#94a3b8", fontSize: 12, textAlign: "center", margin: "0 0 16px" }}>
                   One-time · Instant PDF · No subscription
                 </p>
+
+                {/* Pay Button */}
                 <button
                   style={S.payBtn}
                   onClick={() => {
                     window.open("https://rzp.io/rzp/HHFEhW1", "_blank");
-                    setPaid(true); // temporary unlock
+                  }}
+                >
+                  Pay {CERT_PRICE}
+                </button>
+
+                {/* Manual confirmation */}
+                <button
+                  style={{ ...S.payBtn, background: "#1e293b", marginTop: 10 }}
+                  onClick={() => {
+                    setPaid(true);
                     setShowPaywall(false);
                   }}
                 >
-                  Pay {CERT_PRICE} & Download PDF
+                  ✅ I have completed payment
                 </button>
-                <button style={S.cancelBtn} onClick={() => setShowPaywall(false)}>Cancel</button>
-                <p style={{ color: "#475569", fontSize: 10, textAlign: "center", marginTop: 8 }}>🔒 Secure payment</p>
+
+                {/* Cancel */}
+                <button
+                  style={S.cancelBtn}
+                  onClick={() => setShowPaywall(false)}
+                >
+                  Cancel
+                </button>
+
+                {/* Instruction */}
+                <p style={{ color: "#94a3b8", fontSize: 12, textAlign: "center", marginTop: 8 }}>
+                  After payment, return here and click "I have completed payment"
+                </p>
+
+                {/* Secure note */}
+                <p style={{ color: "#475569", fontSize: 10, textAlign: "center", marginTop: 8 }}>
+                  🔒 Secure payment
+                </p>
               </div>
             </div>
           )}
