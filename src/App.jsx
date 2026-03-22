@@ -527,7 +527,14 @@ export default function IQTest() {
                 <p style={{ color: "#94a3b8", fontSize: 12, textAlign: "center", margin: "0 0 16px" }}>
                   One-time · Instant PDF · No subscription
                 </p>
-                <button style={S.payBtn} onClick={() => { setPaid(true); setShowPaywall(false); }}>
+                <button
+                  style={S.payBtn}
+                  onClick={() => {
+                    window.open("https://rzp.io/rzp/HHFEhW1", "_blank");
+                    setPaid(true); // temporary unlock
+                    setShowPaywall(false);
+                  }}
+                >
                   Pay {CERT_PRICE} & Download PDF
                 </button>
                 <button style={S.cancelBtn} onClick={() => setShowPaywall(false)}>Cancel</button>
