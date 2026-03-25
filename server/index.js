@@ -12,8 +12,19 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
 const app = express();
 const paymentState = new Map();
+const allowedOrigins = FRONTEND_ORIGIN.split(",").map((v) => v.trim()).filter(Boolean);
 
-app.use(cors({ origin: FRONTEND_ORIGIN }));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+  })
+);
 
 function requireConfig(res) {
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {

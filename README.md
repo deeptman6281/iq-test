@@ -31,6 +31,17 @@ npm run dev
 
 Frontend runs on `http://localhost:5173` and backend on `http://localhost:8787`.
 
+## Frontend API Config (Important for Production)
+
+The frontend reads `VITE_API_BASE_URL`:
+- Local same-origin proxy style: leave it empty (default) and call `/api/...`
+- Separate backend domain: set `VITE_API_BASE_URL=https://api.yourdomain.com`
+
+Example `.env` for frontend build:
+```bash
+VITE_API_BASE_URL=https://api.yourdomain.com
+```
+
 ## Razorpay Webhook Setup
 
 Create a webhook in Razorpay dashboard:

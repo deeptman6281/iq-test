@@ -5,7 +5,8 @@ import { pickRandomQuestions, ALL_CATEGORIES } from "./questions.js";
 const AUTHORITY  = "NeuroMark Institute";
 const CERT_PRICE = "INR 39";
 const TOTAL_TIME = 20 * 60;
-const API_BASE = "http://localhost:8787";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const apiUrl = (path) => `${API_BASE}${path}`;
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  SVG SHAPE RENDERER â€” used for visual matrix questions
@@ -541,7 +542,7 @@ export default function IQTest() {
         return;
       }
 
-      const orderRes = await fetch(`${API_BASE}/api/payment/create-order`, {
+      const orderRes = await fetch(apiUrl("/api/payment/create-order"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ certName: certName.trim() }),
@@ -563,7 +564,7 @@ export default function IQTest() {
         notes: { certificate_name: certName.trim() },
         theme: { color: "#2563eb" },
         handler: async (response) => {
-          const verifyRes = await fetch(`${API_BASE}/api/payment/verify`, {
+          const verifyRes = await fetch(apiUrl("/api/payment/verify"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -589,7 +590,7 @@ export default function IQTest() {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (e) {
-      alert("Payment failed to start. Please try again.");
+      alert(`Payment failed to start. Please try again. (${e?.message || "unknown error"})`);
     } finally {
       setPayLoading(false);
     }
