@@ -32,8 +32,9 @@ async function readJsonSafe(response) {
   }
 }
 
-async function postPaymentJson(path, payload, fixedBase) {
+async function postPaymentJson(path, payload, fixedBase, validate) {
   const bases = fixedBase !== undefined ? [fixedBase] : getCandidateApiBases();
+  const attempts = [];
   let lastError = new Error("Unable to reach payment server.");
 
   for (const base of bases) {
@@ -47,16 +48,27 @@ async function postPaymentJson(path, payload, fixedBase) {
       const data = await readJsonSafe(response);
       if (!response.ok) {
         const message = data?.error || `HTTP ${response.status} ${response.statusText}`;
+        attempts.push(`${url} -> ${message}`);
         lastError = new Error(`${message} (${url})`);
         continue;
       }
-      return { data, base };
+      if (typeof validate === "function") {
+        const validationMessage = validate(data);
+        if (validationMessage) {
+          attempts.push(`${url} -> ${validationMessage}`);
+          lastError = new Error(`${validationMessage} (${url})`);
+          continue;
+        }
+      }
+      return { data, base, attempts };
     } catch (error) {
+      attempts.push(`${url} -> ${error?.message || "Network error"}`);
       lastError = new Error(`${error?.message || "Network error"} (${url})`);
     }
   }
 
-  throw lastError;
+  const details = attempts.slice(-4).join("\n");
+  throw new Error(`${lastError.message}\n${details}`);
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -519,6 +531,7 @@ export default function IQTest() {
   const [certGenerated, setCertGenerated] = useState(false);
   const [generating,    setGenerating]    = useState(false);
   const [payLoading,    setPayLoading]    = useState(false);
+  const [paymentDebug,  setPaymentDebug]  = useState("");
   const [kidsGameId,    setKidsGameId]    = useState(null);
   const [kidsRound,     setKidsRound]     = useState(null);
   const [kidsSelected,  setKidsSelected]  = useState(null);
@@ -586,17 +599,27 @@ export default function IQTest() {
   const handleRazorpayPayment = async () => {
     if (!certName.trim() || payLoading) return;
     setPayLoading(true);
+    setPaymentDebug("");
     try {
       const sdkLoaded = await loadRazorpaySdk();
       if (!sdkLoaded) {
         alert("Unable to load payment SDK. Please try again.");
+        setPaymentDebug("Razorpay checkout SDK failed to load.");
         return;
       }
 
       const { data: orderData, base: activeApiBase } = await postPaymentJson(
         "/api/payment/create-order",
-        { certName: certName.trim() }
+        { certName: certName.trim() },
+        undefined,
+        (data) => {
+          if (!data?.orderId) return "Invalid create-order response: orderId missing.";
+          if (!data?.keyId) return "Invalid create-order response: keyId missing.";
+          if (!data?.amount) return "Invalid create-order response: amount missing.";
+          return "";
+        }
       );
+      setPaymentDebug(`Payment API selected: ${activeApiBase || window.location.origin}`);
 
       const options = {
         key: orderData.keyId,
@@ -617,7 +640,8 @@ export default function IQTest() {
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
               },
-              activeApiBase
+              activeApiBase,
+              (data) => (data?.success ? "" : (data?.error || "Verification failed."))
             );
             if (!verifyData.success) {
               alert(verifyData.error || "Payment verification failed.");
@@ -627,6 +651,7 @@ export default function IQTest() {
             setShowPaywall(false);
             alert("Payment verified. Certificate download is unlocked.");
           } catch (verifyError) {
+            setPaymentDebug(`Verification error:\n${verifyError?.message || "unknown error"}`);
             alert(`Payment verification failed. (${verifyError?.message || "unknown error"})`);
           }
         },
@@ -638,6 +663,7 @@ export default function IQTest() {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (e) {
+      setPaymentDebug(`Init error:\n${e?.message || "unknown error"}`);
       alert(`Payment failed to start. Please try again. (${e?.message || "unknown error"})`);
     } finally {
       setPayLoading(false);
@@ -646,7 +672,7 @@ export default function IQTest() {
 
   const handleRetake = () => {
     setScreen("intro"); setCurrent(0); setAnswers({}); setSelected(null);
-    setTimeLeft(TOTAL_TIME); setPaid(false); setCertGenerated(false); setCertName("");
+    setTimeLeft(TOTAL_TIME); setPaid(false); setCertGenerated(false); setCertName(""); setPaymentDebug("");
   };
 
   const openKidsZone = () => {
@@ -989,7 +1015,7 @@ export default function IQTest() {
                 <input style={S.nameInput}
                   placeholder="Enter your full name for the certificate"
                   value={certName} onChange={e=>setCertName(e.target.value)} maxLength={40}/>
-                <button style={S.certBtn} onClick={()=>{if(certName.trim())setShowPaywall(true);}}>
+                <button style={S.certBtn} onClick={()=>{if(certName.trim()){setPaymentDebug("");setShowPaywall(true);}}}>
                   {"\u{1F3C6}"} Get My Certificate {"\u2014"} {CERT_PRICE}
                 </button>
                 {!certName.trim()&&<p style={{color:"#64748b",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>Enter your name above to continue</p>}
@@ -1018,9 +1044,12 @@ export default function IQTest() {
                 <button style={{...S.payBtn,opacity:payLoading?0.7:1}} onClick={handleRazorpayPayment} disabled={payLoading}>
                   {payLoading ? "Starting secure payment..." : `Pay ${CERT_PRICE}`}
                 </button>
-                <button style={S.cancelBtn} onClick={()=>setShowPaywall(false)}>Cancel</button>
+                <button style={S.cancelBtn} onClick={()=>{setPaymentDebug("");setShowPaywall(false);}}>Cancel</button>
                 <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>Certificate unlock requires successful verified payment.</p>
                 <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>{"\u{1F512}"} Secure payment</p>
+                {!!paymentDebug && (
+                  <pre style={S.paymentDebugBox}>{paymentDebug}</pre>
+                )}
               </div>
             </div>
           )}
@@ -1137,5 +1166,6 @@ const S = {
   modalPrice:     { color:"#fbbf24", fontSize:36, fontWeight:900, textAlign:"center", marginBottom:4 },
   payBtn:         { width:"100%", padding:"14px", background:"linear-gradient(135deg,#b8963e,#fbbf24)", color:"#1a0f00", border:"none", borderRadius:12, fontSize:16, fontWeight:700, cursor:"pointer", marginBottom:10, boxShadow:"0 6px 24px rgba(184,150,62,0.4)" },
   cancelBtn:      { width:"100%", padding:"12px", background:"transparent", color:"#64748b", border:"1px solid rgba(255,255,255,0.1)", borderRadius:12, fontSize:14, cursor:"pointer", fontFamily:"'Georgia',serif" },
+  paymentDebugBox:{ marginTop:10, padding:"10px 12px", borderRadius:10, border:"1px solid rgba(248,113,113,0.35)", background:"rgba(15,23,42,0.7)", color:"#fda4af", fontSize:10, lineHeight:1.5, whiteSpace:"pre-wrap", wordBreak:"break-word", fontFamily:"monospace", maxHeight:120, overflow:"auto" },
 };
 
