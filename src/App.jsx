@@ -5,6 +5,7 @@ import { pickRandomQuestions, ALL_CATEGORIES } from "./questions.js";
 const AUTHORITY  = "NeuroMark Institute";
 const CERT_PRICE = "â‚¹39";
 const TOTAL_TIME = 20 * 60;
+const API_BASE = "http://localhost:8787";
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  SVG SHAPE RENDERER â€” used for visual matrix questions
@@ -465,6 +466,7 @@ export default function IQTest() {
   const [paid,          setPaid]          = useState(false);
   const [certGenerated, setCertGenerated] = useState(false);
   const [generating,    setGenerating]    = useState(false);
+  const [payLoading,    setPayLoading]    = useState(false);
   const [kidsGameId,    setKidsGameId]    = useState(null);
   const [kidsRound,     setKidsRound]     = useState(null);
   const [kidsSelected,  setKidsSelected]  = useState(null);
@@ -518,6 +520,79 @@ export default function IQTest() {
       setCertGenerated(true);
       if (window.gtag) window.gtag("event","certificate_downloaded",{event_category:"conversion"});
     } finally { setGenerating(false); }
+  };
+
+  const loadRazorpaySdk = () => new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+
+  const handleRazorpayPayment = async () => {
+    if (!certName.trim() || payLoading) return;
+    setPayLoading(true);
+    try {
+      const sdkLoaded = await loadRazorpaySdk();
+      if (!sdkLoaded) {
+        alert("Unable to load payment SDK. Please try again.");
+        return;
+      }
+
+      const orderRes = await fetch(`${API_BASE}/api/payment/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ certName: certName.trim() }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        alert(orderData.error || "Could not create payment order.");
+        return;
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "NeuroMark Institute",
+        description: "IQ Certificate Payment",
+        order_id: orderData.orderId,
+        prefill: { name: certName.trim() },
+        notes: { certificate_name: certName.trim() },
+        theme: { color: "#2563eb" },
+        handler: async (response) => {
+          const verifyRes = await fetch(`${API_BASE}/api/payment/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+            }),
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyRes.ok || !verifyData.success) {
+            alert(verifyData.error || "Payment verification failed.");
+            return;
+          }
+          setPaid(true);
+          setShowPaywall(false);
+          alert("Payment verified. Certificate download is unlocked.");
+        },
+        modal: {
+          ondismiss: () => setPayLoading(false),
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (e) {
+      alert("Payment failed to start. Please try again.");
+    } finally {
+      setPayLoading(false);
+    }
   };
 
   const handleRetake = () => {
@@ -891,11 +966,11 @@ export default function IQTest() {
                 <div style={S.modalPrice}>{CERT_PRICE} only</div>
                 <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time Â· Instant PDF Â· No subscription</p>
                 <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>ðŸ”¥ 50+ people downloaded today</p>
-                <button style={S.payBtn} onClick={()=>window.open("https://rzp.io/rzp/pdUsCnxP","_blank")}>
-                  Pay {CERT_PRICE}
+                <button style={{...S.payBtn,opacity:payLoading?0.7:1}} onClick={handleRazorpayPayment} disabled={payLoading}>
+                  {payLoading ? "Starting secure payment..." : `Pay ${CERT_PRICE}`}
                 </button>
                 <button style={S.cancelBtn} onClick={()=>setShowPaywall(false)}>Cancel</button>
-                <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>Certificate unlock is now restricted to verified production payments.</p>
+                <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>Certificate unlock requires successful verified payment.</p>
                 <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>ðŸ”’ Secure payment</p>
               </div>
             </div>
