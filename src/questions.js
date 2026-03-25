@@ -1,10 +1,29 @@
-// ─────────────────────────────────────────────────────────
-//  QUESTION BANK — 210 questions across 6 categories
+// ---------------------------------------------------------
+//  QUESTION BANK - 210 questions across 6 categories
 //  35 questions per category
-//  Imported by App.jsx — edit questions here only
-// ─────────────────────────────────────────────────────────
+//  Imported by App.jsx - edit questions here only
+// ---------------------------------------------------------
 
-export const QUESTION_BANK = [
+const vc = (outer, inner, fill, extra = {}) => ({
+  outer,
+  inner,
+  fill,
+  ...extra,
+});
+
+function shuffleWithAnswer(options, answer) {
+  const keyed = options.map((opt, idx) => ({ opt, isAnswer: idx === answer }));
+  for (let i = keyed.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [keyed[i], keyed[j]] = [keyed[j], keyed[i]];
+  }
+  return {
+    options: keyed.map(item => item.opt),
+    answer: keyed.findIndex(item => item.isAnswer),
+  };
+}
+
+const BASE_QUESTION_BANK = [
 
   // ── LOGICAL REASONING (35) ────────────────────────────────
   { category: "Logical Reasoning", question: "All roses are flowers. Some flowers fade quickly. Therefore:", options: ["All roses fade quickly", "Some roses may fade quickly", "No roses fade quickly", "Roses never fade"], answer: 1 },
@@ -47,7 +66,7 @@ export const QUESTION_BANK = [
   { category: "Pattern Recognition", question: "What comes next: 2, 4, 8, 16, ?", options: ["24", "30", "32", "36"], answer: 2 },
   { category: "Pattern Recognition", question: "What comes next: 1, 1, 2, 3, 5, 8, ?", options: ["11", "12", "13", "14"], answer: 2 },
   { category: "Pattern Recognition", question: "Which number completes: 3, 6, 11, 18, 27, ?", options: ["36", "38", "40", "42"], answer: 1 },
-  { category: "Pattern Recognition", question: "A ○ B ● C ○ D ● E ○ ? — What symbol follows?", options: ["○", "●", "△", "□"], answer: 1 },
+  { category: "Pattern Recognition", question: "A o B * C o D * E o ? What symbol follows?", options: ["o", "*", "triangle", "square"], answer: 1 },
   { category: "Pattern Recognition", question: "What comes next: 1, 4, 9, 16, 25, ?", options: ["30", "36", "49", "32"], answer: 1 },
   { category: "Pattern Recognition", question: "What comes next: 2, 6, 12, 20, 30, ?", options: ["40", "42", "44", "46"], answer: 1 },
   { category: "Pattern Recognition", question: "What comes next: 5, 10, 20, 40, ?", options: ["60", "70", "80", "100"], answer: 2 },
@@ -63,21 +82,291 @@ export const QUESTION_BANK = [
   { category: "Pattern Recognition", question: "What comes next: 144, 121, 100, 81, 64, ?", options: ["36", "49", "50", "48"], answer: 1 },
   { category: "Pattern Recognition", question: "What comes next: 2, 3, 5, 7, 11, 13, ?", options: ["15", "16", "17", "19"], answer: 2 },
   { category: "Pattern Recognition", question: "What comes next: 1, 8, 27, 64, 125, ?", options: ["196", "210", "216", "220"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 10, 9, 7, 4, 0, ?", options: ["-3", "-4", "-5", "-6"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: AB, CD, EF, GH, ?", options: ["HI", "IJ", "JK", "KL"], answer: 1 },
-  { category: "Pattern Recognition", question: "What comes next: 1, 4, 13, 40, 121, ?", options: ["360", "362", "364", "366"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 7, 14, 28, 56, ?", options: ["84", "96", "108", "112"], answer: 3 },
-  { category: "Pattern Recognition", question: "What comes next: 0.5, 1, 2, 4, 8, ?", options: ["12", "14", "16", "18"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 3, 5, 9, 17, 33, ?", options: ["55", "61", "65", "67"], answer: 2 },
-  { category: "Pattern Recognition", question: "What is missing: 4, 8, ?, 24, 32", options: ["12", "14", "16", "18"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 1000, 500, 250, 125, ?", options: ["50", "60", "62.5", "75"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 2, 5, 11, 23, 47, ?", options: ["89", "93", "95", "97"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: J, F, M, A, M, J, ?", options: ["A", "J", "S", "O"], answer: 1 },
-  { category: "Pattern Recognition", question: "What comes next: 36, 49, 64, 81, ?", options: ["90", "96", "100", "121"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 1, 2, 6, 24, 120, ?", options: ["240", "480", "720", "840"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 15, 30, 45, 60, ?", options: ["70", "72", "75", "80"], answer: 2 },
-  { category: "Pattern Recognition", question: "What is the missing number: 8, 27, ?, 125", options: ["36", "48", "64", "72"], answer: 2 },
-  { category: "Pattern Recognition", question: "What comes next: 1, 11, 111, 1111, ?", options: ["1111", "11111", "11112", "10000"], answer: 1 },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("triangle", "circle", "black"), vc("circle", "square", "white"), vc("square", "triangle", "gray"),
+      vc("square", "square", "gray"), vc("triangle", "triangle", "black"), vc("circle", "circle", "white"),
+      vc("circle", "triangle", "white"), vc("square", "circle", "gray"),
+    ],
+    options: [
+      vc("triangle", "square", "black"),
+      vc("triangle", "square", "gray"),
+      vc("square", "square", "black"),
+      vc("triangle", "triangle", "black"),
+      vc("circle", "square", "black"),
+      vc("triangle", "circle", "black"),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "dot", "white"), vc("square", "square", "gray"), vc("triangle", "triangle", "black"),
+      vc("square", "triangle", "black"), vc("triangle", "dot", "white"), vc("circle", "square", "gray"),
+      vc("triangle", "square", "gray"), vc("circle", "triangle", "black"),
+    ],
+    options: [
+      vc("square", "dot", "white"),
+      vc("square", "dot", "gray"),
+      vc("circle", "dot", "white"),
+      vc("square", "triangle", "white"),
+      vc("triangle", "dot", "white"),
+      vc("square", "square", "white"),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "triangle", "black", { innerRotation: 0 }), vc("square", "triangle", "gray", { innerRotation: 90 }), vc("triangle", "triangle", "white", { innerRotation: 180 }),
+      vc("square", "triangle", "gray", { innerRotation: 90 }), vc("triangle", "triangle", "white", { innerRotation: 180 }), vc("circle", "triangle", "black", { innerRotation: 270 }),
+      vc("triangle", "triangle", "white", { innerRotation: 180 }), vc("circle", "triangle", "black", { innerRotation: 270 }),
+    ],
+    options: [
+      vc("square", "triangle", "gray", { innerRotation: 0 }),
+      vc("square", "triangle", "gray", { innerRotation: 180 }),
+      vc("triangle", "triangle", "gray", { innerRotation: 0 }),
+      vc("square", "triangle", "black", { innerRotation: 0 }),
+      vc("square", "triangle", "white", { innerRotation: 0 }),
+      vc("circle", "triangle", "gray", { innerRotation: 0 }),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "square", "black", { innerScale: 0.8 }), vc("square", "circle", "black", { innerScale: 1.0 }), vc("triangle", "dot", "black", { innerScale: 1.2 }),
+      vc("square", "circle", "black", { innerScale: 1.2 }), vc("triangle", "dot", "black", { innerScale: 0.8 }), vc("circle", "square", "black", { innerScale: 1.0 }),
+      vc("triangle", "dot", "black", { innerScale: 1.0 }), vc("circle", "square", "black", { innerScale: 1.2 }),
+    ],
+    options: [
+      vc("square", "circle", "black", { innerScale: 0.8 }),
+      vc("square", "circle", "black", { innerScale: 1.2 }),
+      vc("square", "square", "black", { innerScale: 0.8 }),
+      vc("square", "circle", "gray", { innerScale: 0.8 }),
+      vc("circle", "circle", "black", { innerScale: 0.8 }),
+      vc("square", "dot", "black", { innerScale: 0.8 }),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("triangle", "dot", "black"), vc("triangle", "square", "gray"), vc("triangle", "triangle", "white"),
+      vc("square", "dot", "gray"), vc("square", "square", "white"), vc("square", "triangle", "black"),
+      vc("circle", "dot", "white"), vc("circle", "square", "black"),
+    ],
+    options: [
+      vc("circle", "triangle", "gray"),
+      vc("circle", "triangle", "black"),
+      vc("circle", "square", "gray"),
+      vc("triangle", "triangle", "gray"),
+      vc("square", "triangle", "gray"),
+      vc("circle", "dot", "gray"),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "triangle", "black", { innerRotation: 0 }), vc("circle", "triangle", "gray", { innerRotation: 90 }), vc("circle", "triangle", "white", { innerRotation: 180 }),
+      vc("square", "triangle", "gray", { innerRotation: 180 }), vc("square", "triangle", "white", { innerRotation: 270 }), vc("square", "triangle", "black", { innerRotation: 0 }),
+      vc("triangle", "triangle", "white", { innerRotation: 0 }), vc("triangle", "triangle", "black", { innerRotation: 90 }),
+    ],
+    options: [
+      vc("triangle", "triangle", "gray", { innerRotation: 180 }),
+      vc("triangle", "triangle", "gray", { innerRotation: 0 }),
+      vc("triangle", "triangle", "black", { innerRotation: 180 }),
+      vc("square", "triangle", "gray", { innerRotation: 180 }),
+      vc("triangle", "triangle", "white", { innerRotation: 180 }),
+      vc("triangle", "dot", "gray", { innerRotation: 180 }),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "square", "white", { innerRotation: 0 }), vc("square", "square", "gray", { innerRotation: 45 }), vc("triangle", "square", "black", { innerRotation: 90 }),
+      vc("square", "square", "black", { innerRotation: 90 }), vc("triangle", "square", "white", { innerRotation: 135 }), vc("circle", "square", "gray", { innerRotation: 180 }),
+      vc("triangle", "square", "gray", { innerRotation: 180 }), vc("circle", "square", "black", { innerRotation: 225 }),
+    ],
+    options: [
+      vc("square", "square", "white", { innerRotation: 270 }),
+      vc("square", "square", "white", { innerRotation: 225 }),
+      vc("square", "square", "gray", { innerRotation: 270 }),
+      vc("circle", "square", "white", { innerRotation: 270 }),
+      vc("square", "triangle", "white", { innerRotation: 270 }),
+      vc("square", "square", "black", { innerRotation: 270 }),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("square", "dot", "black", { outerRotation: 0 }), vc("square", "dot", "gray", { outerRotation: 45 }), vc("square", "dot", "white", { outerRotation: 0 }),
+      vc("circle", "dot", "gray"), vc("circle", "dot", "white"), vc("circle", "dot", "black"),
+      vc("triangle", "dot", "white", { outerRotation: 0 }), vc("triangle", "dot", "black", { outerRotation: 180 }),
+    ],
+    options: [
+      vc("triangle", "dot", "gray", { outerRotation: 0 }),
+      vc("triangle", "dot", "gray", { outerRotation: 180 }),
+      vc("triangle", "dot", "white", { outerRotation: 0 }),
+      vc("square", "dot", "gray", { outerRotation: 0 }),
+      vc("triangle", "circle", "gray", { outerRotation: 0 }),
+      vc("circle", "dot", "gray"),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "triangle", "black", { innerRotation: 0, innerScale: 0.8 }), vc("square", "triangle", "black", { innerRotation: 90, innerScale: 1.0 }), vc("triangle", "triangle", "black", { innerRotation: 180, innerScale: 1.2 }),
+      vc("square", "triangle", "gray", { innerRotation: 90, innerScale: 1.2 }), vc("triangle", "triangle", "gray", { innerRotation: 180, innerScale: 0.8 }), vc("circle", "triangle", "gray", { innerRotation: 270, innerScale: 1.0 }),
+      vc("triangle", "triangle", "white", { innerRotation: 180, innerScale: 1.0 }), vc("circle", "triangle", "white", { innerRotation: 270, innerScale: 1.2 }),
+    ],
+    options: [
+      vc("square", "triangle", "white", { innerRotation: 0, innerScale: 0.8 }),
+      vc("square", "triangle", "white", { innerRotation: 0, innerScale: 1.2 }),
+      vc("square", "triangle", "gray", { innerRotation: 0, innerScale: 0.8 }),
+      vc("square", "triangle", "white", { innerRotation: 180, innerScale: 0.8 }),
+      vc("triangle", "triangle", "white", { innerRotation: 0, innerScale: 0.8 }),
+      vc("square", "square", "white", { innerRotation: 0, innerScale: 0.8 }),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "dot", "black"), vc("square", "circle", "black"), vc("triangle", "square", "black"),
+      vc("square", "circle", "gray"), vc("triangle", "square", "gray"), vc("circle", "dot", "gray"),
+      vc("triangle", "square", "white"), vc("circle", "dot", "white"),
+    ],
+    options: [
+      vc("square", "circle", "white"),
+      vc("square", "square", "white"),
+      vc("circle", "circle", "white"),
+      vc("square", "circle", "gray"),
+      vc("triangle", "circle", "white"),
+      vc("square", "dot", "white"),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "dot", "black"), vc("square", "dot", "gray"), vc("triangle", "dot", "white"),
+      vc("square", "dot", "white"), vc("triangle", "dot", "black"), vc("circle", "dot", "gray"),
+      vc("triangle", "dot", "gray"), vc("circle", "dot", "white"),
+    ],
+    options: [
+      vc("square", "dot", "black"),
+      vc("square", "dot", "white"),
+      vc("circle", "dot", "black"),
+      vc("triangle", "dot", "white"),
+      vc("square", "circle", "black"),
+      vc("square", "triangle", "black"),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("triangle", "square", "black"), vc("circle", "triangle", "black"), vc("square", "circle", "black"),
+      vc("circle", "square", "gray"), vc("square", "triangle", "gray"), vc("triangle", "circle", "gray"),
+      vc("square", "square", "white"), vc("triangle", "triangle", "white"),
+    ],
+    options: [
+      vc("circle", "circle", "white"),
+      vc("circle", "triangle", "white"),
+      vc("square", "circle", "white"),
+      vc("circle", "circle", "gray"),
+      vc("triangle", "circle", "white"),
+      vc("circle", "dot", "white"),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "dot", "white", { innerScale: 0.8 }), vc("circle", "dot", "gray", { innerScale: 1.0 }), vc("circle", "dot", "black", { innerScale: 1.2 }),
+      vc("square", "dot", "gray", { innerScale: 1.2 }), vc("square", "dot", "black", { innerScale: 0.8 }), vc("square", "dot", "white", { innerScale: 1.0 }),
+      vc("triangle", "dot", "black", { innerScale: 1.0 }), vc("triangle", "dot", "white", { innerScale: 1.2 }),
+    ],
+    options: [
+      vc("triangle", "dot", "gray", { innerScale: 0.8 }),
+      vc("triangle", "dot", "gray", { innerScale: 1.2 }),
+      vc("triangle", "dot", "black", { innerScale: 0.8 }),
+      vc("triangle", "dot", "white", { innerScale: 0.8 }),
+      vc("square", "dot", "gray", { innerScale: 0.8 }),
+      vc("triangle", "circle", "gray", { innerScale: 0.8 }),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("triangle", "triangle", "black", { innerRotation: 0 }), vc("triangle", "triangle", "gray", { innerRotation: 90 }), vc("triangle", "triangle", "white", { innerRotation: 180 }),
+      vc("square", "triangle", "gray", { innerRotation: 180 }), vc("square", "triangle", "white", { innerRotation: 270 }), vc("square", "triangle", "black", { innerRotation: 0 }),
+      vc("circle", "triangle", "white", { innerRotation: 0 }), vc("circle", "triangle", "black", { innerRotation: 90 }),
+    ],
+    options: [
+      vc("circle", "triangle", "gray", { innerRotation: 180 }),
+      vc("circle", "triangle", "gray", { innerRotation: 0 }),
+      vc("circle", "triangle", "black", { innerRotation: 180 }),
+      vc("circle", "triangle", "white", { innerRotation: 180 }),
+      vc("triangle", "triangle", "gray", { innerRotation: 180 }),
+      vc("circle", "dot", "gray", { innerRotation: 180 }),
+    ],
+    answer: 0,
+  },
+  {
+    type: "visual",
+    category: "Pattern Recognition",
+    question: "Which shape completes the 3x3 matrix?",
+    grid: [
+      vc("circle", "square", "black", { innerRotation: 0 }), vc("square", "square", "black", { innerRotation: 45 }), vc("triangle", "square", "black", { innerRotation: 90 }),
+      vc("square", "square", "gray", { innerRotation: 90 }), vc("triangle", "square", "gray", { innerRotation: 135 }), vc("circle", "square", "gray", { innerRotation: 180 }),
+      vc("triangle", "square", "white", { innerRotation: 180 }), vc("circle", "square", "white", { innerRotation: 225 }),
+    ],
+    options: [
+      vc("square", "square", "white", { innerRotation: 270 }),
+      vc("square", "square", "white", { innerRotation: 225 }),
+      vc("square", "triangle", "white", { innerRotation: 270 }),
+      vc("circle", "square", "white", { innerRotation: 270 }),
+      vc("square", "square", "gray", { innerRotation: 270 }),
+      vc("square", "square", "black", { innerRotation: 270 }),
+    ],
+    answer: 0,
+  },
   { category: "Pattern Recognition", question: "What comes next: 2, 4, 12, 48, 240, ?", options: ["960", "1200", "1440", "1680"], answer: 2 },
 
   // ── MATH / NUMERICAL (35) ─────────────────────────────────
@@ -205,7 +494,7 @@ export const QUESTION_BANK = [
   { category: "Working Memory", question: "Reverse WATER. 4th letter?", options: ["A", "E", "T", "R"], answer: 0 },
   { category: "Working Memory", question: "Numbers: 14, 7, 21, 3. Product of smallest two?", options: ["14", "21", "42", "28"], answer: 1 },
   { category: "Working Memory", question: "STRONG reversed and 2nd letter?", options: ["G", "N", "O", "R"], answer: 2 },
-  { category: "Working Memory", question: "5 words: CAT, DOG, BIRD, FISH, COW. 3rd word reversed?", options: ["DRIB", "DRIB", "BIRD", "DIRB"], answer: 0 },
+  { category: "Working Memory", question: "5 words: CAT, DOG, BIRD, FISH, COW. 3rd word reversed?", options: ["DRIB", "DRBI", "BIRD", "DIRB"], answer: 0 },
   { category: "Working Memory", question: "List: 3, 6, 9, 12, 15. Product of 2nd and 4th?", options: ["54", "60", "72", "80"], answer: 2 },
   { category: "Working Memory", question: "EARTH has how many vowels?", options: ["1", "2", "3", "4"], answer: 1 },
   { category: "Working Memory", question: "Numbers: 8, 3, 6, 1, 4. Average of the two smallest?", options: ["2", "2.5", "3", "3.5"], answer: 1 },
@@ -230,6 +519,206 @@ export const QUESTION_BANK = [
 ];
 
 // ── Pick 20 balanced random questions (called once per session) ──
+function buildOptions(correct, distractors, answerIndex) {
+  const options = [...distractors];
+  options.splice(answerIndex, 0, correct);
+  return { options, answer: answerIndex };
+}
+
+function buildExtraLogicalQuestions() {
+  const disjointSets = [
+    ["sparrows", "birds", "mammals"], ["tables", "furniture", "vehicles"], ["poets", "writers", "machines"], ["violinists", "musicians", "planets"],
+    ["apples", "fruits", "metals"], ["teachers", "educators", "reptiles"], ["roses", "flowers", "engines"], ["doctors", "professionals", "insects"],
+    ["triangles", "polygons", "circles"], ["bicycles", "vehicles", "birds"], ["laptops", "electronics", "plants"], ["rivers", "waterbodies", "deserts"],
+    ["pilots", "crew", "trees"], ["diamonds", "gems", "liquids"], ["pianos", "instruments", "fish"], ["satellites", "objects", "animals"],
+  ];
+  const overlapSets = [
+    ["artists", "designers", "creatives"], ["coders", "developers", "professionals"], ["runners", "athletes", "competitors"], ["lawyers", "graduates", "professionals"],
+    ["gamers", "students", "teenagers"], ["authors", "readers", "learners"], ["teachers", "trainers", "mentors"], ["investors", "planners", "professionals"],
+    ["nurses", "caregivers", "workers"], ["engineers", "problem-solvers", "professionals"], ["scientists", "researchers", "academics"], ["drivers", "workers", "commuters"],
+    ["singers", "performers", "artists"], ["managers", "leaders", "decision-makers"], ["analysts", "observers", "professionals"], ["designers", "creators", "artists"],
+  ];
+  const out = [];
+  disjointSets.forEach(([a, b, c], idx) => {
+    const placed = buildOptions(`No ${a} are ${c}.`, [`Some ${a} are ${c}.`, `All ${c} are ${a}.`, `${a} may be ${c}.`], idx % 4);
+    out.push({ category: "Logical Reasoning", question: `All ${a} are ${b}. No ${b} are ${c}. Therefore, which statement must be true?`, options: placed.options, answer: placed.answer });
+  });
+  overlapSets.forEach(([a, b, c], idx) => {
+    const placed = buildOptions(`Some ${a} are ${c}.`, [`No ${a} are ${c}.`, `All ${a} are ${c}.`, `No ${b} are ${c}.`], (idx + 1) % 4);
+    out.push({ category: "Logical Reasoning", question: `Some ${a} are ${b}. All ${b} are ${c}. What follows logically?`, options: placed.options, answer: placed.answer });
+  });
+  return out;
+}
+
+function buildExtraPatternTextQuestions() {
+  return [
+    { category: "Pattern Recognition", question: "What comes next: 4, 9, 16, 25, 36, ?", options: ["42", "45", "49", "54"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 2, 5, 10, 17, 26, ?", options: ["35", "37", "39", "41"], answer: 1 },
+    { category: "Pattern Recognition", question: "What comes next: 81, 27, 9, 3, ?", options: ["1", "0", "2", "1.5"], answer: 0 },
+    { category: "Pattern Recognition", question: "What comes next: 7, 10, 16, 25, 37, ?", options: ["50", "52", "54", "56"], answer: 1 },
+    { category: "Pattern Recognition", question: "What comes next: BC, DE, FG, HI, ?", options: ["IJ", "JK", "KL", "LM"], answer: 1 },
+    { category: "Pattern Recognition", question: "What comes next: 3, 6, 12, 24, 48, ?", options: ["72", "84", "96", "108"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 13, 21, 34, 55, ?", options: ["76", "81", "89", "90"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 1, 3, 6, 10, 15, ?", options: ["18", "20", "21", "24"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 40, 36, 31, 25, 18, ?", options: ["11", "10", "9", "8"], answer: 1 },
+    { category: "Pattern Recognition", question: "What comes next: M, J, G, D, ?", options: ["B", "A", "C", "E"], answer: 1 },
+    { category: "Pattern Recognition", question: "What comes next: 5, 9, 17, 33, 65, ?", options: ["97", "121", "129", "130"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 2, 4, 7, 11, 16, ?", options: ["20", "21", "22", "23"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 90, 81, 73, 66, 60, ?", options: ["55", "54", "53", "52"], answer: 0 },
+    { category: "Pattern Recognition", question: "What comes next: 11, 22, 44, 88, ?", options: ["132", "154", "166", "176"], answer: 3 },
+    { category: "Pattern Recognition", question: "What comes next: 2, 9, 28, 65, ?", options: ["110", "126", "127", "129"], answer: 1 },
+    { category: "Pattern Recognition", question: "What comes next: AZ, BY, CX, DW, ?", options: ["EV", "FU", "GV", "EW"], answer: 0 },
+    { category: "Pattern Recognition", question: "What comes next: 14, 19, 29, 44, 64, ?", options: ["81", "85", "89", "94"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 3, 4, 6, 9, 13, ?", options: ["16", "17", "18", "19"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 256, 128, 64, 32, ?", options: ["8", "12", "16", "24"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: C, F, J, O, U, ?", options: ["A", "B", "C", "D"], answer: 0 },
+    { category: "Pattern Recognition", question: "What comes next: 6, 18, 54, 162, ?", options: ["324", "406", "486", "512"], answer: 2 },
+    { category: "Pattern Recognition", question: "What comes next: 1, 5, 14, 30, 55, ?", options: ["79", "84", "91", "95"], answer: 2 },
+  ];
+}
+
+function buildExtraPatternVisualQuestions() {
+  return [
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("triangle", "dot", "black"), vc("circle", "dot", "gray"), vc("square", "dot", "white"), vc("circle", "dot", "white"), vc("square", "dot", "black"), vc("triangle", "dot", "gray"), vc("square", "dot", "gray"), vc("triangle", "dot", "white")], options: [vc("circle", "dot", "black"), vc("circle", "dot", "white"), vc("triangle", "dot", "black"), vc("square", "dot", "black"), vc("circle", "square", "black"), vc("circle", "triangle", "black")], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("circle", "square", "black"), vc("square", "triangle", "black"), vc("triangle", "circle", "black"), vc("square", "square", "gray"), vc("triangle", "triangle", "gray"), vc("circle", "circle", "gray"), vc("triangle", "square", "white"), vc("circle", "triangle", "white")], options: [vc("square", "circle", "white"), vc("square", "square", "white"), vc("circle", "circle", "white"), vc("square", "circle", "gray"), vc("triangle", "circle", "white"), vc("square", "dot", "white")], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("triangle", "triangle", "black", { innerRotation: 0 }), vc("triangle", "triangle", "gray", { innerRotation: 90 }), vc("triangle", "triangle", "white", { innerRotation: 180 }), vc("circle", "triangle", "gray", { innerRotation: 180 }), vc("circle", "triangle", "white", { innerRotation: 270 }), vc("circle", "triangle", "black", { innerRotation: 0 }), vc("square", "triangle", "white", { innerRotation: 0 }), vc("square", "triangle", "black", { innerRotation: 90 })], options: [vc("square", "triangle", "gray", { innerRotation: 180 }), vc("square", "triangle", "gray", { innerRotation: 0 }), vc("square", "triangle", "white", { innerRotation: 180 }), vc("square", "triangle", "black", { innerRotation: 180 }), vc("triangle", "triangle", "gray", { innerRotation: 180 }), vc("square", "dot", "gray", { innerRotation: 180 })], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("square", "circle", "black", { innerScale: 0.8 }), vc("square", "circle", "gray", { innerScale: 1.0 }), vc("square", "circle", "white", { innerScale: 1.2 }), vc("triangle", "circle", "gray", { innerScale: 1.2 }), vc("triangle", "circle", "white", { innerScale: 0.8 }), vc("triangle", "circle", "black", { innerScale: 1.0 }), vc("circle", "circle", "white", { innerScale: 1.0 }), vc("circle", "circle", "black", { innerScale: 1.2 })], options: [vc("circle", "circle", "gray", { innerScale: 0.8 }), vc("circle", "circle", "gray", { innerScale: 1.2 }), vc("circle", "circle", "black", { innerScale: 0.8 }), vc("circle", "circle", "white", { innerScale: 0.8 }), vc("triangle", "circle", "gray", { innerScale: 0.8 }), vc("circle", "dot", "gray", { innerScale: 0.8 })], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("circle", "dot", "black", { outerRotation: 0 }), vc("square", "dot", "black", { outerRotation: 45 }), vc("triangle", "dot", "black", { outerRotation: 0 }), vc("circle", "dot", "gray", { outerRotation: 45 }), vc("square", "dot", "gray", { outerRotation: 0 }), vc("triangle", "dot", "gray", { outerRotation: 45 }), vc("circle", "dot", "white", { outerRotation: 0 }), vc("square", "dot", "white", { outerRotation: 45 })], options: [vc("triangle", "dot", "white", { outerRotation: 0 }), vc("triangle", "dot", "white", { outerRotation: 45 }), vc("triangle", "dot", "gray", { outerRotation: 0 }), vc("circle", "dot", "white", { outerRotation: 0 }), vc("triangle", "circle", "white", { outerRotation: 0 }), vc("triangle", "square", "white", { outerRotation: 0 })], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("square", "triangle", "white", { innerRotation: 0 }), vc("square", "triangle", "gray", { innerRotation: 90 }), vc("square", "triangle", "black", { innerRotation: 180 }), vc("circle", "triangle", "gray", { innerRotation: 180 }), vc("circle", "triangle", "black", { innerRotation: 270 }), vc("circle", "triangle", "white", { innerRotation: 0 }), vc("triangle", "triangle", "black", { innerRotation: 0 }), vc("triangle", "triangle", "white", { innerRotation: 90 })], options: [vc("triangle", "triangle", "gray", { innerRotation: 180 }), vc("triangle", "triangle", "gray", { innerRotation: 0 }), vc("triangle", "triangle", "black", { innerRotation: 180 }), vc("square", "triangle", "gray", { innerRotation: 180 }), vc("triangle", "dot", "gray", { innerRotation: 180 }), vc("triangle", "square", "gray", { innerRotation: 180 })], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("triangle", "square", "black"), vc("circle", "square", "gray"), vc("square", "square", "white"), vc("circle", "circle", "black"), vc("square", "circle", "gray"), vc("triangle", "circle", "white"), vc("square", "dot", "black"), vc("triangle", "dot", "gray")], options: [vc("circle", "dot", "white"), vc("circle", "dot", "gray"), vc("circle", "square", "white"), vc("square", "dot", "white"), vc("triangle", "dot", "white"), vc("circle", "circle", "white")], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("circle", "dot", "black"), vc("circle", "square", "black"), vc("circle", "triangle", "black"), vc("square", "dot", "gray"), vc("square", "square", "gray"), vc("square", "triangle", "gray"), vc("triangle", "dot", "white"), vc("triangle", "square", "white")], options: [vc("triangle", "triangle", "white"), vc("triangle", "square", "white"), vc("triangle", "triangle", "gray"), vc("square", "triangle", "white"), vc("triangle", "dot", "white"), vc("circle", "triangle", "white")], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("triangle", "dot", "black"), vc("square", "circle", "black"), vc("circle", "square", "black"), vc("square", "dot", "gray"), vc("circle", "circle", "gray"), vc("triangle", "square", "gray"), vc("circle", "dot", "white"), vc("triangle", "circle", "white")], options: [vc("square", "square", "white"), vc("square", "circle", "white"), vc("circle", "square", "white"), vc("triangle", "square", "white"), vc("square", "dot", "white"), vc("square", "triangle", "white")], answer: 0 },
+    { type: "visual", category: "Pattern Recognition", question: "Which shape completes the 3x3 matrix?", grid: [vc("square", "dot", "white"), vc("triangle", "dot", "gray"), vc("circle", "dot", "black"), vc("triangle", "circle", "white"), vc("circle", "circle", "gray"), vc("square", "circle", "black"), vc("circle", "triangle", "white"), vc("square", "triangle", "gray")], options: [vc("triangle", "triangle", "black"), vc("triangle", "triangle", "gray"), vc("triangle", "circle", "black"), vc("circle", "triangle", "black"), vc("square", "triangle", "black"), vc("triangle", "dot", "black")], answer: 0 },
+  ];
+}
+
+function buildExtraMathQuestions() {
+  const out = [];
+  for (let i = 0; i < 20; i++) {
+    const a = 2 + (i % 5);
+    const x = 3 + (i % 8);
+    const b = 4 + (i % 9);
+    const c = a * x + b;
+    const placed = buildOptions(String(x), [String(x + 1), String(Math.max(1, x - 1)), String(x + 2)], i % 4);
+    out.push({ category: "Math / Numerical", question: `If ${a}x + ${b} = ${c}, what is x?`, options: placed.options, answer: placed.answer });
+  }
+  for (let i = 0; i < 15; i++) {
+    const base = 200 + i * 40;
+    const pct = 10 + (i % 6) * 5;
+    const ans = (base * pct) / 100;
+    const placed = buildOptions(String(ans), [String(ans + 8), String(ans + 12), String(ans - 8)], (i + 1) % 4);
+    out.push({ category: "Math / Numerical", question: `What is ${pct}% of ${base}?`, options: placed.options, answer: placed.answer });
+  }
+  for (let i = 0; i < 15; i++) {
+    const speed = 35 + (i % 7) * 5;
+    const hours = 2 + (i % 4);
+    const dist = speed * hours;
+    const placed = buildOptions(`${dist} km`, [`${dist - speed} km`, `${dist + speed} km`, `${dist + 2 * speed} km`], (i + 2) % 4);
+    out.push({ category: "Math / Numerical", question: `A vehicle travels at ${speed} km/h for ${hours} hours. How far does it travel?`, options: placed.options, answer: placed.answer });
+  }
+  return out;
+}
+
+function buildExtraVerbalQuestions() {
+  const synonyms = [
+    ["ABUNDANT", "Plentiful", ["Rare", "Brief", "Hidden"]], ["CALM", "Peaceful", ["Loud", "Sharp", "Bitter"]], ["DILIGENT", "Hardworking", ["Careless", "Idle", "Lazy"]],
+    ["ELATED", "Joyful", ["Angry", "Tired", "Doubtful"]], ["FRAGILE", "Delicate", ["Heavy", "Rough", "Rigid"]], ["HINDER", "Obstruct", ["Assist", "Create", "Expand"]],
+    ["IMPARTIAL", "Fair", ["Biased", "Noisy", "Harsh"]], ["JOVIAL", "Cheerful", ["Silent", "Somber", "Rigid"]], ["KEEN", "Sharp", ["Slow", "Dull", "Weak"]],
+    ["LUCID", "Clear", ["Foggy", "Complex", "Empty"]], ["METICULOUS", "Thorough", ["Hasty", "Rough", "Casual"]], ["NOBLE", "Honorable", ["Mean", "Crooked", "Lazy"]],
+    ["OPTIMAL", "Best", ["Average", "Poor", "Late"]], ["PRUDENT", "Wise", ["Rash", "Blind", "Quick"]], ["ROBUST", "Strong", ["Fragile", "Thin", "Weak"]],
+    ["VIVID", "Bright", ["Dull", "Dark", "Faint"]],
+  ];
+  const antonyms = [
+    ["ANCIENT", "Modern", ["Aged", "Historic", "Classic"]], ["BOLD", "Timid", ["Brave", "Loud", "Sharp"]], ["COMPLEX", "Simple", ["Detailed", "Layered", "Dense"]],
+    ["DENSE", "Sparse", ["Thick", "Heavy", "Solid"]], ["EAGER", "Reluctant", ["Ready", "Prompt", "Keen"]], ["FLEXIBLE", "Rigid", ["Soft", "Curved", "Bending"]],
+    ["GENEROUS", "Stingy", ["Helpful", "Kind", "Open"]], ["HOSTILE", "Friendly", ["Rude", "Rough", "Cold"]], ["INTENSE", "Mild", ["Severe", "Sharp", "Strong"]],
+    ["JUNIOR", "Senior", ["Young", "Small", "New"]], ["LAWFUL", "Illegal", ["Legal", "Valid", "Formal"]], ["MINOR", "Major", ["Small", "Lesser", "Tiny"]],
+    ["NOISY", "Quiet", ["Loud", "Rough", "Busy"]], ["OPTIMISTIC", "Pessimistic", ["Hopeful", "Bright", "Positive"]], ["RAPID", "Slow", ["Fast", "Swift", "Quick"]],
+    ["VISIBLE", "Hidden", ["Clear", "Bright", "Seen"]],
+  ];
+  const out = [];
+  synonyms.forEach(([word, correct, wrong], idx) => {
+    const placed = buildOptions(correct, wrong, idx % 4);
+    out.push({ category: "Verbal / Language", question: `Choose the word closest in meaning to ${word}:`, options: placed.options, answer: placed.answer });
+  });
+  antonyms.forEach(([word, correct, wrong], idx) => {
+    const placed = buildOptions(correct, wrong, (idx + 1) % 4);
+    out.push({ category: "Verbal / Language", question: `Choose the opposite of ${word}:`, options: placed.options, answer: placed.answer });
+  });
+  return out;
+}
+
+function buildExtraSpatialQuestions() {
+  const out = [];
+  const diagNs = [5, 6, 7, 8, 9, 10];
+  diagNs.forEach((n, idx) => {
+    const d = (n * (n - 3)) / 2;
+    const placed = buildOptions(String(d), [String(d - 2), String(d + 2), String(d + 4)], idx % 4);
+    out.push({ category: "Spatial Reasoning", question: `How many diagonals does a ${n}-sided polygon have?`, options: placed.options, answer: placed.answer });
+  });
+  const sumNs = [5, 6, 7, 8, 9, 10];
+  sumNs.forEach((n, idx) => {
+    const s = (n - 2) * 180;
+    const placed = buildOptions(`${s} deg`, [`${s - 180} deg`, `${s + 90} deg`, `${s + 180} deg`], (idx + 1) % 4);
+    out.push({ category: "Spatial Reasoning", question: `Interior angle sum of a ${n}-sided polygon is:`, options: placed.options, answer: placed.answer });
+  });
+  out.push(
+    { category: "Spatial Reasoning", question: "A cube has how many face diagonals in total?", options: ["6", "12", "18", "24"], answer: 1 },
+    { category: "Spatial Reasoning", question: "A rectangular prism has how many vertices?", options: ["6", "8", "10", "12"], answer: 1 },
+    { category: "Spatial Reasoning", question: "If you turn right three times from North, you face:", options: ["North", "East", "South", "West"], answer: 3 },
+    { category: "Spatial Reasoning", question: "If you face East and turn left 90 deg, you face:", options: ["North", "South", "West", "East"], answer: 0 },
+    { category: "Spatial Reasoning", question: "How many lines of symmetry does a square have?", options: ["2", "3", "4", "5"], answer: 2 },
+    { category: "Spatial Reasoning", question: "How many lines of symmetry does an equilateral triangle have?", options: ["1", "2", "3", "4"], answer: 2 },
+    { category: "Spatial Reasoning", question: "A pentagonal pyramid has how many faces?", options: ["5", "6", "7", "8"], answer: 1 },
+    { category: "Spatial Reasoning", question: "A triangular pyramid has how many vertices?", options: ["3", "4", "5", "6"], answer: 1 },
+    { category: "Spatial Reasoning", question: "How many edges does a square pyramid have?", options: ["6", "8", "10", "12"], answer: 1 },
+    { category: "Spatial Reasoning", question: "How many cubes are in a 4x4x4 cube?", options: ["48", "56", "64", "72"], answer: 2 },
+    { category: "Spatial Reasoning", question: "If a clock reads 9:00, angle between hands is:", options: ["45 deg", "90 deg", "135 deg", "180 deg"], answer: 1 },
+    { category: "Spatial Reasoning", question: "At 12:30, the smaller angle between clock hands is:", options: ["15 deg", "30 deg", "45 deg", "60 deg"], answer: 0 },
+    { category: "Spatial Reasoning", question: "A hemisphere has how many total surfaces (flat + curved)?", options: ["1", "2", "3", "4"], answer: 1 },
+    { category: "Spatial Reasoning", question: "If you move 5 units east and 12 north, straight-line distance is:", options: ["11", "12", "13", "14"], answer: 2 },
+    { category: "Spatial Reasoning", question: "A regular hexagon can be split into how many equilateral triangles?", options: ["4", "5", "6", "7"], answer: 2 },
+    { category: "Spatial Reasoning", question: "A prism with n-sided base has how many vertices?", options: ["n", "2n", "3n", "n+2"], answer: 1 },
+    { category: "Spatial Reasoning", question: "A dodecagon has how many sides?", options: ["10", "11", "12", "13"], answer: 2 },
+    { category: "Spatial Reasoning", question: "A circle rotated by any angle remains:", options: ["Different", "Unchanged", "Mirrored", "Skewed"], answer: 1 }
+  );
+  return out;
+}
+
+function buildExtraWorkingMemoryQuestions() {
+  const words = ["PLANET", "SILVER", "CANDLE", "THRONE", "MARKET", "POCKET", "BRIDGE", "TARGET", "SPRING", "DRAGON", "FLOWER", "STREAM"];
+  const out = [];
+  words.forEach((word, idx) => {
+    const reversed = word.split("").reverse().join("");
+    const correct = reversed[1];
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").filter(ch => ch !== correct);
+    const placed = buildOptions(correct, [letters[idx], letters[idx + 7], letters[idx + 13]], idx % 4);
+    out.push({ category: "Working Memory", question: `Reverse ${word}. Which is the 2nd letter in the reversed word?`, options: placed.options, answer: placed.answer });
+  });
+  for (let i = 0; i < 12; i++) {
+    const a = 6 + i;
+    const b = 2 + (i % 5);
+    const c = 3 + (i % 4);
+    const d = 1 + (i % 3);
+    const correct = a * b - c + d;
+    const placed = buildOptions(String(correct), [String(correct + 2), String(correct - 2), String(correct + 4)], (i + 1) % 4);
+    out.push({ category: "Working Memory", question: `Compute quickly: ${a} x ${b} - ${c} + ${d} = ?`, options: placed.options, answer: placed.answer });
+  }
+  return out;
+}
+
+const EXTRA_QUESTIONS = [
+  ...buildExtraLogicalQuestions(),
+  ...buildExtraPatternTextQuestions(),
+  ...buildExtraPatternVisualQuestions(),
+  ...buildExtraMathQuestions(),
+  ...buildExtraVerbalQuestions(),
+  ...buildExtraSpatialQuestions(),
+  ...buildExtraWorkingMemoryQuestions(),
+];
+
+export const QUESTION_BANK = [...BASE_QUESTION_BANK, ...EXTRA_QUESTIONS];
+
 export function pickRandomQuestions() {
   const byCategory = {};
   QUESTION_BANK.forEach((q, idx) => {
@@ -237,29 +726,46 @@ export function pickRandomQuestions() {
     byCategory[q.category].push({ ...q, id: idx });
   });
 
-  const cats = Object.keys(byCategory);
-  const perCat = Math.floor(20 / cats.length); // 3 per category
-  const extra  = 20 - perCat * cats.length;    // 2 extras
-
   const selected = [];
+  const visualPool = QUESTION_BANK
+    .map((q, idx) => ({ ...q, id: idx }))
+    .filter(q => q.type === "visual")
+    .sort(() => Math.random() - 0.5);
+  selected.push(...visualPool.slice(0, Math.min(2, visualPool.length)));
+
+  const cats = Object.keys(byCategory);
+  const perCat = Math.floor(20 / cats.length);
+  const extra = 20 - perCat * cats.length;
+
   cats.forEach(cat => {
-    const pool = [...byCategory[cat]].sort(() => Math.random() - 0.5);
-    selected.push(...pool.slice(0, perCat));
+    const alreadyInCat = selected.filter(q => q.category === cat).length;
+    const needed = Math.max(0, perCat - alreadyInCat);
+    const usedIds = new Set(selected.map(q => q.id));
+    const pool = byCategory[cat]
+      .filter(q => !usedIds.has(q.id))
+      .sort(() => Math.random() - 0.5);
+    selected.push(...pool.slice(0, needed));
   });
 
-  // Fill remaining from random pool
   const usedIds = new Set(selected.map(q => q.id));
   const remaining = QUESTION_BANK
     .filter((_, i) => !usedIds.has(i))
     .sort(() => Math.random() - 0.5)
-    .slice(0, extra)
+    .slice(0, Math.max(0, extra + (20 - selected.length)))
     .map((q, i) => ({ ...q, id: selected.length + i }));
 
   selected.push(...remaining);
 
   return selected
+    .slice(0, 20)
     .sort(() => Math.random() - 0.5)
-    .map((q, i) => ({ ...q, id: i + 1 }));
+    .map((q, i) => {
+      if (q.type === "visual") {
+        const shuffled = shuffleWithAnswer(q.options, q.answer);
+        return { ...q, options: shuffled.options, answer: shuffled.answer, id: i + 1 };
+      }
+      return { ...q, id: i + 1 };
+    });
 }
 
 // All unique categories
