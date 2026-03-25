@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { jsPDF } from "jspdf";
 import { pickRandomQuestions, ALL_CATEGORIES } from "./questions.js";
 
 const AUTHORITY  = "NeuroMark Institute";
-const CERT_PRICE = "₹39";
+const CERT_PRICE = "â‚¹39";
 const TOTAL_TIME = 20 * 60;
 
-// ─────────────────────────────────────────────────────────
-//  SVG SHAPE RENDERER — used for visual matrix questions
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  SVG SHAPE RENDERER â€” used for visual matrix questions
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const OPTION_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const KIDS_GAMES = [
   { id: "shape_match", title: "Shape Match", subtitle: "Pick the same shape", level: "Easy", time: "2 min" },
@@ -200,7 +200,7 @@ function SVGCell({ cell, size = 64 }) {
   );
 }
 
-// 3×3 grid — last cell is the "?" placeholder
+// 3Ã—3 grid â€” last cell is the "?" placeholder
 function VisualGrid({ grid, cellSize = 70 }) {
   const gap = 4;
   return (
@@ -233,9 +233,9 @@ function VisualGrid({ grid, cellSize = 70 }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  IQ SCORING
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getIQScore(correct, total, timeLeft) {
   const base      = (correct / total) * 100;
   const timeBonus = timeLeft > 0 ? Math.round((timeLeft / TOTAL_TIME) * 8) : 0;
@@ -267,9 +267,9 @@ function generateCertID() {
     "FQD-USRK";
 }
 
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PDF HELPERS
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function loadImageAsDataURL(url) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -296,9 +296,9 @@ const GOLD  = [184, 150, 62];
 const BROWN = [107, 92, 62];
 const MID   = [74, 63, 47];
 
-// ─────────────────────────────────────────────────────────
-//  POSITION CONSTANTS (A4 landscape = 297 × 210 mm)
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  POSITION CONSTANTS (A4 landscape = 297 Ã— 210 mm)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const P = {
   titleX:      148,  titleY:      35,
   taglineY:     41,
@@ -330,9 +330,9 @@ const P = {
   verifyY:     191,
 };
 
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  PDF GENERATOR
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function generateVectorPDF(name, iq, label, certID, date, catScores) {
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = 297, H = 210;
@@ -448,9 +448,9 @@ async function generateVectorPDF(name, iq, label, certID, date, catScores) {
   pdf.save(`IQ_Certificate_${name||"Candidate"}.pdf`);
 }
 
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  MAIN COMPONENT
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function IQTest() {
   const [QUESTIONS] = useState(() => pickRandomQuestions());
 
@@ -563,15 +563,15 @@ export default function IQTest() {
   const q           = QUESTIONS[current];
 
   const CAT_ICONS = {
-    "Logical Reasoning":   "🔗",
-    "Pattern Recognition": "🔷",
-    "Math / Numerical":    "📐",
-    "Verbal / Language":   "📝",
-    "Spatial Reasoning":   "🧊",
-    "Working Memory":      "🧠",
+    "Logical Reasoning":   "ðŸ”—",
+    "Pattern Recognition": "ðŸ”·",
+    "Math / Numerical":    "ðŸ“",
+    "Verbal / Language":   "ðŸ“",
+    "Spatial Reasoning":   "ðŸ§Š",
+    "Working Memory":      "ðŸ§ ",
   };
 
-  // ── INTRO ─────────────────────────────────────────────
+  // â”€â”€ INTRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (screen === "kids_home") return (
     <div style={S.kidsPage}>
       <div style={S.kidsCard}>
@@ -713,34 +713,34 @@ export default function IQTest() {
           <div style={S.infoBox}><span style={S.infoNum}>145</span><span style={S.infoLabel}>Max IQ</span></div>
         </div>
         <div style={S.certPreview}>
-          🎓 <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> — Download your verified IQ certificate for {CERT_PRICE}
+          ðŸŽ“ <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> â€” Download your verified IQ certificate for {CERT_PRICE}
         </div>
         <div style={S.entryActions}>
           <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment</button>
           <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8 years)</button>
         </div>
-        <p style={S.disclaimer}>Issued by {AUTHORITY} · Questions randomised each session</p>
+        <p style={S.disclaimer}>Issued by {AUTHORITY} Â· Questions randomised each session</p>
       </div>
     </div>
   );
 
-  // ── TEST ──────────────────────────────────────────────
+  // â”€â”€ TEST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (screen === "test") return (
     <div style={S.page}>
       <div style={S.testCard}>
         <div style={S.testHeader}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={S.qCounter}>{current+1} / {QUESTIONS.length}</span>
-            <span style={S.catTag}>{CAT_ICONS[q.category]||"🧩"} {q.category}</span>
+            <span style={S.catTag}>{CAT_ICONS[q.category]||"ðŸ§©"} {q.category}</span>
           </div>
           <div style={{...S.timer,color:timerUrgent?"#f87171":"#a78bfa",borderColor:timerUrgent?"#f87171":"#a78bfa"}}>
-            ⏱ {formatTime(timeLeft)}
+            â± {formatTime(timeLeft)}
           </div>
         </div>
 
         <div style={S.progressBg}><div style={{...S.progressFill,width:`${progress}%`}}/></div>
 
-        {/* ── Question display ── */}
+        {/* â”€â”€ Question display â”€â”€ */}
         <div style={S.questionBox}>
           <p style={{...S.questionText, marginBottom: q.type==="visual"?16:0}}>
             {q.question}
@@ -752,7 +752,7 @@ export default function IQTest() {
           )}
         </div>
 
-        {/* ── Options ── */}
+        {/* â”€â”€ Options â”€â”€ */}
         {q.type === "visual" ? (
           <div
             style={{
@@ -785,21 +785,21 @@ export default function IQTest() {
           {current > 0 && (
             <button style={S.skipBtn}
               onClick={()=>{setCurrent(c=>c-1);setSelected(answers[current-1]??null);}}>
-              ← Back
+              â† Back
             </button>
           )}
           <button
             style={{...S.nextBtn,opacity:selected===null?0.4:1,flex:1}}
             disabled={selected===null}
             onClick={handleNext}>
-            {current+1===QUESTIONS.length?"Submit Test ✓":"Next Question →"}
+            {current+1===QUESTIONS.length?"Submit Test âœ“":"Next Question â†’"}
           </button>
         </div>
       </div>
     </div>
   );
 
-  // ── RESULT ────────────────────────────────────────────
+  // â”€â”€ RESULT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (screen === "result") {
     const {correct,total,iq,catScores,timeUsed} = computeResults();
     const {label} = getIQLabel(iq);
@@ -848,16 +848,16 @@ export default function IQTest() {
 
           <div style={S.certSection}>
             <div style={S.certHeader}>
-              <span style={{fontSize:28}}>🎓</span>
+              <span style={{fontSize:28}}>ðŸŽ“</span>
               <div>
                 <div style={S.certTitle}>Official PDF Certificate</div>
-                <div style={S.certSubtitle}>Vector quality · Never blurs when zoomed</div>
+                <div style={S.certSubtitle}>Vector quality Â· Never blurs when zoomed</div>
               </div>
               <div style={S.certPrice}>{CERT_PRICE}</div>
             </div>
             <div style={S.certFeatures}>
               {["NeuroMark design","Name & IQ score","Cognitive profile bars","Instant PDF"].map(f=>(
-                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>✓</span> {f}</div>
+                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>âœ“</span> {f}</div>
               ))}
             </div>
             {!paid ? (
@@ -866,7 +866,7 @@ export default function IQTest() {
                   placeholder="Enter your full name for the certificate"
                   value={certName} onChange={e=>setCertName(e.target.value)} maxLength={40}/>
                 <button style={S.certBtn} onClick={()=>{if(certName.trim())setShowPaywall(true);}}>
-                  🏆 Get My Certificate — {CERT_PRICE}
+                  ðŸ† Get My Certificate â€” {CERT_PRICE}
                 </button>
                 {!certName.trim()&&<p style={{color:"#64748b",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>Enter your name above to continue</p>}
               </>
@@ -874,9 +874,9 @@ export default function IQTest() {
               <div style={{textAlign:"center"}}>
                 <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}}
                   onClick={handleDownloadPDF} disabled={generating}>
-                  {generating?"⏳ Generating...":"📄 Download PDF Certificate"}
+                  {generating?"â³ Generating...":"ðŸ“„ Download PDF Certificate"}
                 </button>
-                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>✅ Certificate downloaded! 🎉</p>}
+                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>âœ… Certificate downloaded! ðŸŽ‰</p>}
               </div>
             )}
           </div>
@@ -884,29 +884,25 @@ export default function IQTest() {
           {showPaywall&&(
             <div style={S.modal}>
               <div style={S.modalCard}>
-                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>🏆</div>
+                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>ðŸ†</div>
                 <div style={S.modalTitle}>Complete Your Certificate</div>
                 <div style={S.modalName}>{certName}</div>
-                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> — {label}</div>
+                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> â€” {label}</div>
                 <div style={S.modalPrice}>{CERT_PRICE} only</div>
-                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time · Instant PDF · No subscription</p>
-                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>🔥 50+ people downloaded today</p>
-                <button style={S.payBtn} onClick={()=>window.open("https://rzp.io/rzp/HHFEhW1","_blank")}>
+                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time Â· Instant PDF Â· No subscription</p>
+                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>ðŸ”¥ 50+ people downloaded today</p>
+                <button style={S.payBtn} onClick={()=>window.open("https://rzp.io/rzp/pdUsCnxP","_blank")}>
                   Pay {CERT_PRICE}
                 </button>
-                <button style={{...S.payBtn,background:"#1e293b",marginTop:10}}
-                  onClick={()=>{setPaid(true);setShowPaywall(false);}}>
-                  ✅ I have completed payment
-                </button>
                 <button style={S.cancelBtn} onClick={()=>setShowPaywall(false)}>Cancel</button>
-                <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>After payment, click "I have completed payment"</p>
-                <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>🔒 Secure payment</p>
+                <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>Certificate unlock is now restricted to verified production payments.</p>
+                <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>ðŸ”’ Secure payment</p>
               </div>
             </div>
           )}
 
           <button style={{...S.startBtn,marginTop:16}} onClick={handleRetake}>
-            Retake Test ↺ · Refresh page for new questions
+            Retake Test â†º Â· Refresh page for new questions
           </button>
         </div>
         <canvas ref={canvasRef} style={{display:"none"}}/>
@@ -915,9 +911,9 @@ export default function IQTest() {
   }
 }
 
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  STYLES
-// ─────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const S = {
   page:           { minHeight:"100vh", background:"linear-gradient(135deg,#0f0c29 0%,#1a1040 50%,#0f0c29 100%)", display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"32px 16px", fontFamily:"'Georgia',serif" },
   card:           { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:24, padding:"48px 40px", maxWidth:540, width:"100%", textAlign:"center", backdropFilter:"blur(20px)", boxShadow:"0 0 80px rgba(167,139,250,0.1)" },
@@ -1018,3 +1014,4 @@ const S = {
   payBtn:         { width:"100%", padding:"14px", background:"linear-gradient(135deg,#b8963e,#fbbf24)", color:"#1a0f00", border:"none", borderRadius:12, fontSize:16, fontWeight:700, cursor:"pointer", marginBottom:10, boxShadow:"0 6px 24px rgba(184,150,62,0.4)" },
   cancelBtn:      { width:"100%", padding:"12px", background:"transparent", color:"#64748b", border:"1px solid rgba(255,255,255,0.1)", borderRadius:12, fontSize:14, cursor:"pointer", fontFamily:"'Georgia',serif" },
 };
+
