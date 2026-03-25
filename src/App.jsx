@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import { pickRandomQuestions, ALL_CATEGORIES } from "./questions.js";
 
 const AUTHORITY  = "NeuroMark Institute";
-const CERT_PRICE = "INR 39";
+const CERT_PRICE = "\u20B939";
 const TOTAL_TIME = 20 * 60;
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 const apiUrl = (path) => `${API_BASE}${path}`;
@@ -639,12 +639,12 @@ export default function IQTest() {
   const q           = QUESTIONS[current];
 
   const CAT_ICONS = {
-    "Logical Reasoning":   "LR",
-    "Pattern Recognition": "PR",
-    "Math / Numerical":    "MN",
-    "Verbal / Language":   "VL",
-    "Spatial Reasoning":   "SR",
-    "Working Memory":      "WM",
+    "Logical Reasoning":   "\u{1F517}",
+    "Pattern Recognition": "\u{1F537}",
+    "Math / Numerical":    "\u{1F4D0}",
+    "Verbal / Language":   "\u{1F4DD}",
+    "Spatial Reasoning":   "\u{1F9CA}",
+    "Working Memory":      "\u{1F9E0}",
   };
 
   // â”€â”€ INTRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -789,13 +789,13 @@ export default function IQTest() {
           <div style={S.infoBox}><span style={S.infoNum}>145</span><span style={S.infoLabel}>Max IQ</span></div>
         </div>
         <div style={S.certPreview}>
-          <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> - Download your verified IQ certificate for {CERT_PRICE}
+          {"\u{1F393}"} <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> {"\u2014"} Download your verified IQ certificate for {CERT_PRICE}
         </div>
         <div style={S.entryActions}>
           <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment</button>
           <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8 years)</button>
         </div>
-        <p style={S.disclaimer}>Issued by {AUTHORITY} - Questions randomised each session</p>
+        <p style={S.disclaimer}>Issued by {AUTHORITY} {"\u00B7"} Questions randomised each session</p>
       </div>
     </div>
   );
@@ -807,10 +807,10 @@ export default function IQTest() {
         <div style={S.testHeader}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={S.qCounter}>{current+1} / {QUESTIONS.length}</span>
-            <span style={S.catTag}>{CAT_ICONS[q.category]||"IQ"} {q.category}</span>
+            <span style={S.catTag}>{CAT_ICONS[q.category]||"\u{1F9E9}"} {q.category}</span>
           </div>
           <div style={{...S.timer,color:timerUrgent?"#f87171":"#a78bfa",borderColor:timerUrgent?"#f87171":"#a78bfa"}}>
-            Time {formatTime(timeLeft)}
+            {"\u23F1"} {formatTime(timeLeft)}
           </div>
         </div>
 
@@ -861,14 +861,14 @@ export default function IQTest() {
           {current > 0 && (
             <button style={S.skipBtn}
               onClick={()=>{setCurrent(c=>c-1);setSelected(answers[current-1]??null);}}>
-              Back
+              {"\u2190"} Back
             </button>
           )}
           <button
             style={{...S.nextBtn,opacity:selected===null?0.4:1,flex:1}}
             disabled={selected===null}
             onClick={handleNext}>
-            {current+1===QUESTIONS.length?"Submit Test":"Next Question"}
+            {current+1===QUESTIONS.length?"Submit Test \u2713":"Next Question \u2192"}
           </button>
         </div>
       </div>
@@ -924,16 +924,16 @@ export default function IQTest() {
 
           <div style={S.certSection}>
             <div style={S.certHeader}>
-              <span style={{fontSize:28}}>PDF</span>
+              <span style={{fontSize:28}}>{"\u{1F393}"}</span>
               <div>
                 <div style={S.certTitle}>Official PDF Certificate</div>
-                <div style={S.certSubtitle}>Vector quality - never blurs when zoomed</div>
+                <div style={S.certSubtitle}>Vector quality {"\u00B7"} Never blurs when zoomed</div>
               </div>
               <div style={S.certPrice}>{CERT_PRICE}</div>
             </div>
             <div style={S.certFeatures}>
               {["NeuroMark design","Name & IQ score","Cognitive profile bars","Instant PDF"].map(f=>(
-                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>OK</span> {f}</div>
+                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>{"\u2713"}</span> {f}</div>
               ))}
             </div>
             {!paid ? (
@@ -942,7 +942,7 @@ export default function IQTest() {
                   placeholder="Enter your full name for the certificate"
                   value={certName} onChange={e=>setCertName(e.target.value)} maxLength={40}/>
                 <button style={S.certBtn} onClick={()=>{if(certName.trim())setShowPaywall(true);}}>
-                  Get My Certificate - {CERT_PRICE}
+                  {"\u{1F3C6}"} Get My Certificate {"\u2014"} {CERT_PRICE}
                 </button>
                 {!certName.trim()&&<p style={{color:"#64748b",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>Enter your name above to continue</p>}
               </>
@@ -950,9 +950,9 @@ export default function IQTest() {
               <div style={{textAlign:"center"}}>
                 <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}}
                   onClick={handleDownloadPDF} disabled={generating}>
-                  {generating?"Generating...":"Download PDF Certificate"}
+                  {generating?"\u23F3 Generating...":"\u{1F4C4} Download PDF Certificate"}
                 </button>
-                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>Certificate downloaded.</p>}
+                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>{"\u2705"} Certificate downloaded! {"\u{1F389}"}</p>}
               </div>
             )}
           </div>
@@ -960,25 +960,25 @@ export default function IQTest() {
           {showPaywall&&(
             <div style={S.modal}>
               <div style={S.modalCard}>
-                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>PAY</div>
+                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>{"\u{1F3C6}"}</div>
                 <div style={S.modalTitle}>Complete Your Certificate</div>
                 <div style={S.modalName}>{certName}</div>
-                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> - {label}</div>
+                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> {"\u2014"} {label}</div>
                 <div style={S.modalPrice}>{CERT_PRICE} only</div>
-                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time - Instant PDF - No subscription</p>
-                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>50+ people downloaded today</p>
+                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time {"\u00B7"} Instant PDF {"\u00B7"} No subscription</p>
+                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>{"\u{1F525}"} 50+ people downloaded today</p>
                 <button style={{...S.payBtn,opacity:payLoading?0.7:1}} onClick={handleRazorpayPayment} disabled={payLoading}>
                   {payLoading ? "Starting secure payment..." : `Pay ${CERT_PRICE}`}
                 </button>
                 <button style={S.cancelBtn} onClick={()=>setShowPaywall(false)}>Cancel</button>
                 <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>Certificate unlock requires successful verified payment.</p>
-                <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>Secure payment</p>
+                <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>{"\u{1F512}"} Secure payment</p>
               </div>
             </div>
           )}
 
           <button style={{...S.startBtn,marginTop:16}} onClick={handleRetake}>
-            Retake Test - Refresh page for new questions
+            Retake Test {"\u21BA"} {"\u00B7"} Refresh page for new questions
           </button>
         </div>
         <canvas ref={canvasRef} style={{display:"none"}}/>
