@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import { pickRandomQuestions, ALL_CATEGORIES } from "./questions.js";
 
 const AUTHORITY  = "NeuroMark Institute";
-const CERT_PRICE = "â‚¹39";
+const CERT_PRICE = "INR 39";
 const TOTAL_TIME = 20 * 60;
 const API_BASE = "http://localhost:8787";
 
@@ -638,12 +638,12 @@ export default function IQTest() {
   const q           = QUESTIONS[current];
 
   const CAT_ICONS = {
-    "Logical Reasoning":   "ðŸ”—",
-    "Pattern Recognition": "ðŸ”·",
-    "Math / Numerical":    "ðŸ“",
-    "Verbal / Language":   "ðŸ“",
-    "Spatial Reasoning":   "ðŸ§Š",
-    "Working Memory":      "ðŸ§ ",
+    "Logical Reasoning":   "LR",
+    "Pattern Recognition": "PR",
+    "Math / Numerical":    "MN",
+    "Verbal / Language":   "VL",
+    "Spatial Reasoning":   "SR",
+    "Working Memory":      "WM",
   };
 
   // â”€â”€ INTRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -788,13 +788,13 @@ export default function IQTest() {
           <div style={S.infoBox}><span style={S.infoNum}>145</span><span style={S.infoLabel}>Max IQ</span></div>
         </div>
         <div style={S.certPreview}>
-          ðŸŽ“ <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> â€” Download your verified IQ certificate for {CERT_PRICE}
+          <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> - Download your verified IQ certificate for {CERT_PRICE}
         </div>
         <div style={S.entryActions}>
           <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment</button>
           <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8 years)</button>
         </div>
-        <p style={S.disclaimer}>Issued by {AUTHORITY} Â· Questions randomised each session</p>
+        <p style={S.disclaimer}>Issued by {AUTHORITY} - Questions randomised each session</p>
       </div>
     </div>
   );
@@ -806,10 +806,10 @@ export default function IQTest() {
         <div style={S.testHeader}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={S.qCounter}>{current+1} / {QUESTIONS.length}</span>
-            <span style={S.catTag}>{CAT_ICONS[q.category]||"ðŸ§©"} {q.category}</span>
+            <span style={S.catTag}>{CAT_ICONS[q.category]||"IQ"} {q.category}</span>
           </div>
           <div style={{...S.timer,color:timerUrgent?"#f87171":"#a78bfa",borderColor:timerUrgent?"#f87171":"#a78bfa"}}>
-            â± {formatTime(timeLeft)}
+            Time {formatTime(timeLeft)}
           </div>
         </div>
 
@@ -860,14 +860,14 @@ export default function IQTest() {
           {current > 0 && (
             <button style={S.skipBtn}
               onClick={()=>{setCurrent(c=>c-1);setSelected(answers[current-1]??null);}}>
-              â† Back
+              Back
             </button>
           )}
           <button
             style={{...S.nextBtn,opacity:selected===null?0.4:1,flex:1}}
             disabled={selected===null}
             onClick={handleNext}>
-            {current+1===QUESTIONS.length?"Submit Test âœ“":"Next Question â†’"}
+            {current+1===QUESTIONS.length?"Submit Test":"Next Question"}
           </button>
         </div>
       </div>
@@ -923,16 +923,16 @@ export default function IQTest() {
 
           <div style={S.certSection}>
             <div style={S.certHeader}>
-              <span style={{fontSize:28}}>ðŸŽ“</span>
+              <span style={{fontSize:28}}>PDF</span>
               <div>
                 <div style={S.certTitle}>Official PDF Certificate</div>
-                <div style={S.certSubtitle}>Vector quality Â· Never blurs when zoomed</div>
+                <div style={S.certSubtitle}>Vector quality - never blurs when zoomed</div>
               </div>
               <div style={S.certPrice}>{CERT_PRICE}</div>
             </div>
             <div style={S.certFeatures}>
               {["NeuroMark design","Name & IQ score","Cognitive profile bars","Instant PDF"].map(f=>(
-                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>âœ“</span> {f}</div>
+                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>OK</span> {f}</div>
               ))}
             </div>
             {!paid ? (
@@ -941,7 +941,7 @@ export default function IQTest() {
                   placeholder="Enter your full name for the certificate"
                   value={certName} onChange={e=>setCertName(e.target.value)} maxLength={40}/>
                 <button style={S.certBtn} onClick={()=>{if(certName.trim())setShowPaywall(true);}}>
-                  ðŸ† Get My Certificate â€” {CERT_PRICE}
+                  Get My Certificate - {CERT_PRICE}
                 </button>
                 {!certName.trim()&&<p style={{color:"#64748b",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>Enter your name above to continue</p>}
               </>
@@ -949,9 +949,9 @@ export default function IQTest() {
               <div style={{textAlign:"center"}}>
                 <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}}
                   onClick={handleDownloadPDF} disabled={generating}>
-                  {generating?"â³ Generating...":"ðŸ“„ Download PDF Certificate"}
+                  {generating?"Generating...":"Download PDF Certificate"}
                 </button>
-                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>âœ… Certificate downloaded! ðŸŽ‰</p>}
+                {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>Certificate downloaded.</p>}
               </div>
             )}
           </div>
@@ -959,25 +959,25 @@ export default function IQTest() {
           {showPaywall&&(
             <div style={S.modal}>
               <div style={S.modalCard}>
-                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>ðŸ†</div>
+                <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>PAY</div>
                 <div style={S.modalTitle}>Complete Your Certificate</div>
                 <div style={S.modalName}>{certName}</div>
-                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> â€” {label}</div>
+                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> - {label}</div>
                 <div style={S.modalPrice}>{CERT_PRICE} only</div>
-                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time Â· Instant PDF Â· No subscription</p>
-                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>ðŸ”¥ 50+ people downloaded today</p>
+                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time - Instant PDF - No subscription</p>
+                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>50+ people downloaded today</p>
                 <button style={{...S.payBtn,opacity:payLoading?0.7:1}} onClick={handleRazorpayPayment} disabled={payLoading}>
                   {payLoading ? "Starting secure payment..." : `Pay ${CERT_PRICE}`}
                 </button>
                 <button style={S.cancelBtn} onClick={()=>setShowPaywall(false)}>Cancel</button>
                 <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>Certificate unlock requires successful verified payment.</p>
-                <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>ðŸ”’ Secure payment</p>
+                <p style={{color:"#475569",fontSize:10,textAlign:"center",marginTop:4}}>Secure payment</p>
               </div>
             </div>
           )}
 
           <button style={{...S.startBtn,marginTop:16}} onClick={handleRetake}>
-            Retake Test â†º Â· Refresh page for new questions
+            Retake Test - Refresh page for new questions
           </button>
         </div>
         <canvas ref={canvasRef} style={{display:"none"}}/>
