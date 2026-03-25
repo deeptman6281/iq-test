@@ -83,6 +83,104 @@ const KIDS_GAMES = [
   { id: "count_shapes", title: "Count Shapes", subtitle: "Count target symbols", level: "Easy-Medium", time: "3 min" },
   { id: "next_pattern", title: "Next Pattern", subtitle: "Choose what comes next", level: "Medium", time: "3 min" },
 ];
+const ACTIVITY_FEED = [
+  { name: "Aarav", city: "Pune", score: 128, time: "just now" },
+  { name: "Ananya", city: "Bengaluru", score: 121, time: "2 min ago" },
+  { name: "Vihaan", city: "Delhi", score: 133, time: "4 min ago" },
+  { name: "Ira", city: "Mumbai", score: 118, time: "5 min ago" },
+  { name: "Advait", city: "Hyderabad", score: 126, time: "7 min ago" },
+  { name: "Meera", city: "Chennai", score: 124, time: "8 min ago" },
+  { name: "Reyansh", city: "Ahmedabad", score: 131, time: "10 min ago" },
+  { name: "Diya", city: "Kolkata", score: 117, time: "12 min ago" },
+  { name: "Kabir", city: "Jaipur", score: 122, time: "14 min ago" },
+  { name: "Ishita", city: "Lucknow", score: 129, time: "16 min ago" },
+  { name: "Arjun", city: "Indore", score: 119, time: "18 min ago" },
+  { name: "Sara", city: "Dubai", score: 123, time: "21 min ago" },
+];
+const LANDING_LINKS = {
+  product: [
+    { id: "games", label: "Games", hint: "Open Kids Zone" },
+    { id: "tests", label: "Tests", hint: "Go to IQ Test" },
+    { id: "training", label: "Training", hint: "Coming soon" },
+    { id: "courses", label: "Courses", hint: "Coming soon" },
+  ],
+  support: [
+    { id: "faq", label: "FAQ", hint: "" },
+    { id: "contact", label: "Contact", hint: "" },
+    { id: "privacy", label: "Privacy Policy", hint: "" },
+    { id: "terms", label: "Terms of Service", hint: "" },
+  ],
+};
+const FAQ_ITEMS = [
+  {
+    question: "How long does the IQ test take?",
+    answer: "The main IQ test takes about 20 minutes and includes a timed mix of logic, pattern, numerical, verbal, spatial, and memory questions.",
+  },
+  {
+    question: "How many questions are in the test?",
+    answer: "The current IQ assessment includes 20 questions selected from a larger randomized question set.",
+  },
+  {
+    question: "Can I retake the test?",
+    answer: "Yes. You can retake the test to attempt a fresh randomized set of questions.",
+  },
+  {
+    question: "When can I download the certificate?",
+    answer: "The certificate can be downloaded only after successful verified payment.",
+  },
+  {
+    question: "What details are shown on the certificate?",
+    answer: "The certificate includes your name, IQ score, certificate ID, and category-wise cognitive summary.",
+  },
+  {
+    question: "What is Kids Zone?",
+    answer: "Kids Zone is a separate section for children aged 4 to 8 years with simpler shape, pattern, and counting activities.",
+  },
+  {
+    question: "What payment methods are supported?",
+    answer: "Payment options depend on Razorpay Checkout and may include UPI, cards, net banking, and wallets.",
+  },
+  {
+    question: "What should I do if payment fails?",
+    answer: "Retry after a short wait. If the issue continues, contact support with a screenshot and basic payment details.",
+  },
+];
+const PRIVACY_ITEMS = [
+  {
+    title: "Basic Information",
+    body: "We may collect information you enter during the test experience, such as your name for certificate generation and limited payment-related details handled through Razorpay.",
+  },
+  {
+    title: "Assessment Data",
+    body: "Your answers, score, and category-level performance may be processed to generate results and certificates.",
+  },
+  {
+    title: "Payments",
+    body: "Payments are processed through Razorpay. We do not store your full card, UPI PIN, or sensitive banking credentials on this site.",
+  },
+  {
+    title: "Support",
+    body: "If you contact us, we may use your email or message only for support, certificate issues, and service-related communication.",
+  },
+];
+const TERMS_ITEMS = [
+  {
+    title: "Use of Service",
+    body: "This platform is provided for personal assessment, learning, and informational use. You agree not to misuse, disrupt, or attempt to manipulate the test or payment process.",
+  },
+  {
+    title: "Results and Certificates",
+    body: "Test results are shown after completion. Certificate download is available only after successful verified payment.",
+  },
+  {
+    title: "Payments and Refunds",
+    body: "All certificate payments are handled through Razorpay. Any refund decision, if applicable, is subject to review and support communication.",
+  },
+  {
+    title: "Availability",
+    body: "Features, question sets, pricing, and support content may be updated, improved, or changed without prior notice.",
+  },
+];
 
 const kidCell = (outer, inner, fill, extra = {}) => ({ outer, inner, fill, ...extra });
 
@@ -534,6 +632,8 @@ export default function IQTest() {
   const [generating,    setGenerating]    = useState(false);
   const [payLoading,    setPayLoading]    = useState(false);
   const [paymentDebug,  setPaymentDebug]  = useState("");
+  const [infoPage,      setInfoPage]      = useState({ title: "", description: "" });
+  const [docPage,       setDocPage]       = useState({ title: "", items: [] });
   const [kidsGameId,    setKidsGameId]    = useState(null);
   const [kidsRound,     setKidsRound]     = useState(null);
   const [kidsSelected,  setKidsSelected]  = useState(null);
@@ -682,6 +782,54 @@ export default function IQTest() {
     setKidsGameId(null);
     setKidsRound(null);
     setKidsSelected(null);
+  };
+
+  const openInfoPage = (title, description) => {
+    setInfoPage({ title, description });
+    setScreen("info");
+  };
+
+  const openDocPage = (title, items) => {
+    setDocPage({ title, items });
+    setScreen("doc");
+  };
+
+  const handleLandingLink = (id) => {
+    if (id === "tests") {
+      setScreen("test");
+      return;
+    }
+    if (id === "games") {
+      openKidsZone();
+      return;
+    }
+
+    const labelMap = {
+      training: "Training",
+      courses: "Courses",
+      faq: "FAQ",
+      contact: "Contact",
+      privacy: "Privacy Policy",
+      terms: "Terms of Service",
+    };
+    const title = labelMap[id] || "Coming Soon";
+    if (id === "contact") {
+      openInfoPage("Contact", "You can reach out to us for feedback, support, and general questions at brainrank182@gmail.com.");
+      return;
+    }
+    if (id === "faq") {
+      setScreen("faq");
+      return;
+    }
+    if (id === "privacy") {
+      openDocPage("Privacy Policy", PRIVACY_ITEMS);
+      return;
+    }
+    if (id === "terms") {
+      openDocPage("Terms of Service", TERMS_ITEMS);
+      return;
+    }
+    openInfoPage(title, `${title} is coming soon. This section is added locally for preview routing.`);
   };
 
   const startKidsGame = (gameId) => {
@@ -848,9 +996,70 @@ export default function IQTest() {
     </div>
   );
 
+  if (screen === "info") return (
+    <div style={S.page}>
+      <div style={S.infoPageCard}>
+        <h2 style={S.infoPageTitle}>{infoPage.title}</h2>
+        <p style={S.infoPageText}>{infoPage.description}</p>
+        <div style={S.infoPageActions}>
+          <button style={S.startBtn} onClick={() => setScreen("intro")}>Back to Home</button>
+          <button style={S.kidsEntryBtn} onClick={() => setScreen("test")}>Go to IQ Test</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (screen === "faq") return (
+    <div style={S.page}>
+      <div style={S.infoPageCard}>
+        <div style={S.badge}>HELP</div>
+        <h2 style={S.infoPageTitle}>Frequently Asked Questions</h2>
+        <div style={S.faqList}>
+          {FAQ_ITEMS.map((item, index) => (
+            <div key={item.question} style={S.faqItem}>
+              <div style={S.faqQuestion}>{index + 1}. {item.question}</div>
+              <div style={S.faqAnswer}>{item.answer}</div>
+            </div>
+          ))}
+        </div>
+        <div style={S.infoPageActions}>
+          <button style={S.startBtn} onClick={() => setScreen("intro")}>Back to Home</button>
+          <button style={S.kidsEntryBtn} onClick={() => setScreen("test")}>Go to IQ Test</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (screen === "doc") return (
+    <div style={S.page}>
+      <div style={S.infoPageCard}>
+        <div style={S.badge}>INFO</div>
+        <h2 style={S.infoPageTitle}>{docPage.title}</h2>
+        <div style={S.docList}>
+          {docPage.items.map((item) => (
+            <div key={item.title} style={S.docItem}>
+              <div style={S.docTitle}>{item.title}</div>
+              <div style={S.docBody}>{item.body}</div>
+            </div>
+          ))}
+        </div>
+        <div style={S.infoPageActions}>
+          <button style={S.startBtn} onClick={() => setScreen("intro")}>Back to Home</button>
+          <button style={S.kidsEntryBtn} onClick={() => setScreen("test")}>Go to IQ Test</button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (screen === "intro") return (
     <div style={S.page}>
       <div style={S.card}>
+        <style>{`
+          @keyframes landingTickerMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+        `}</style>
         <div style={S.badge}>COGNITIVE ASSESSMENT</div>
         <h1 style={S.title}>IQ<span style={{color:"#a78bfa"}}>Test</span></h1>
         <p style={S.subtitle}>A scientifically-inspired assessment across 6 cognitive dimensions</p>
@@ -870,6 +1079,42 @@ export default function IQTest() {
         <div style={S.entryActions}>
           <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment</button>
           <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8 years)</button>
+        </div>
+        <div style={S.activitySection}>
+          <div style={S.activityHeader}>
+            <span style={S.activityBadge}>Assessment Feed</span>
+          </div>
+          <div style={S.activityViewport}>
+            <div style={S.activityTrack}>
+              {[...ACTIVITY_FEED, ...ACTIVITY_FEED].map((item, idx) => (
+                <div key={`${item.name}-${idx}`} style={S.activityPill}>
+                  <strong style={S.activityName}>{item.name}</strong>
+                  <span>{`from ${item.city} scored IQ ${item.score}`}</span>
+                  <span style={S.activityTime}>{item.time}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={S.linkSections}>
+          <div style={S.linkPanel}>
+            <div style={S.linkPanelTitle}>Product</div>
+            {LANDING_LINKS.product.map((item) => (
+              <button key={item.id} style={S.linkButton} onClick={() => handleLandingLink(item.id)}>
+                <span>{item.label}</span>
+                <span style={S.linkHint}>{item.hint}</span>
+              </button>
+            ))}
+          </div>
+          <div style={S.linkPanel}>
+            <div style={S.linkPanelTitle}>Support</div>
+            {LANDING_LINKS.support.map((item) => (
+              <button key={item.id} style={S.linkButton} onClick={() => handleLandingLink(item.id)}>
+                <span>{item.label}</span>
+                <span style={S.linkHint}>{item.hint}</span>
+              </button>
+            ))}
+          </div>
         </div>
         <p style={S.disclaimer}>Issued by {AUTHORITY} {"\u00B7"} Questions randomised each session</p>
       </div>
@@ -1071,20 +1316,45 @@ export default function IQTest() {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const S = {
   page:           { minHeight:"100vh", background:"linear-gradient(135deg,#0f0c29 0%,#1a1040 50%,#0f0c29 100%)", display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"32px 16px", fontFamily:"'Georgia',serif" },
-  card:           { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:24, padding:"48px 40px", maxWidth:540, width:"100%", textAlign:"center", backdropFilter:"blur(20px)", boxShadow:"0 0 80px rgba(167,139,250,0.1)" },
-  badge:          { display:"inline-block", background:"rgba(167,139,250,0.15)", color:"#a78bfa", border:"1px solid rgba(167,139,250,0.4)", borderRadius:100, padding:"4px 16px", fontSize:11, letterSpacing:3, fontFamily:"monospace", marginBottom:20 },
-  title:          { fontSize:56, fontWeight:900, color:"#f1f5f9", margin:"0 0 8px", letterSpacing:-2 },
-  subtitle:       { color:"#94a3b8", fontSize:15, marginBottom:32, lineHeight:1.6 },
+  card:           { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:24, padding:"40px 32px", maxWidth:540, width:"100%", textAlign:"center", backdropFilter:"blur(20px)", boxShadow:"0 0 80px rgba(167,139,250,0.1)" },
+  infoPageCard:   { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:24, padding:"40px 32px", maxWidth:640, width:"100%", textAlign:"center", backdropFilter:"blur(20px)", boxShadow:"0 0 80px rgba(167,139,250,0.1)" },
+  badge:          { display:"inline-block", background:"rgba(167,139,250,0.15)", color:"#a78bfa", border:"1px solid rgba(167,139,250,0.4)", borderRadius:100, padding:"4px 14px", fontSize:10, letterSpacing:2.4, fontFamily:"monospace", marginBottom:18 },
+  title:          { fontSize:"clamp(40px,8vw,52px)", fontWeight:900, color:"#f1f5f9", margin:"0 0 10px", letterSpacing:-1.4, lineHeight:0.98 },
+  infoPageTitle:  { fontSize:"clamp(30px,6vw,38px)", fontWeight:900, color:"#f1f5f9", margin:"0 0 12px", lineHeight:1.05 },
+  infoPageText:   { color:"#cbd5e1", fontSize:15, lineHeight:1.65, margin:"0 0 14px" },
+  infoPageActions:{ display:"grid", gap:10 },
+  faqList:        { display:"grid", gap:10, marginBottom:18, textAlign:"left" },
+  faqItem:        { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:16, padding:"14px 16px" },
+  faqQuestion:    { color:"#f8fafc", fontSize:14, fontWeight:700, marginBottom:6 },
+  faqAnswer:      { color:"#cbd5e1", fontSize:13, lineHeight:1.6 },
+  docList:        { display:"grid", gap:10, marginBottom:18, textAlign:"left" },
+  docItem:        { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:16, padding:"14px 16px" },
+  docTitle:       { color:"#f8fafc", fontSize:14, fontWeight:700, marginBottom:6 },
+  docBody:        { color:"#cbd5e1", fontSize:13, lineHeight:1.6 },
+  subtitle:       { color:"#94a3b8", fontSize:14, marginBottom:28, lineHeight:1.65, maxWidth:420, marginInline:"auto" },
   categoryGrid:   { display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center", marginBottom:32 },
   catChip:        { background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:100, padding:"6px 14px", fontSize:12, color:"#cbd5e1", display:"flex", alignItems:"center", gap:6 },
-  infoRow:        { display:"flex", gap:12, justifyContent:"center", marginBottom:24 },
-  infoBox:        { display:"flex", flexDirection:"column", alignItems:"center", background:"rgba(167,139,250,0.08)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:16, padding:"16px 24px" },
-  infoNum:        { fontSize:28, fontWeight:900, color:"#a78bfa" },
-  infoLabel:      { fontSize:11, color:"#64748b", letterSpacing:1, marginTop:2, fontFamily:"monospace" },
-  certPreview:    { background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.3)", borderRadius:12, padding:"12px 16px", fontSize:13, color:"#cbd5e1", marginBottom:24, lineHeight:1.6 },
-  startBtn:       { width:"100%", padding:"16px", background:"linear-gradient(135deg,#7c3aed,#a78bfa)", color:"#fff", border:"none", borderRadius:14, fontSize:16, fontWeight:700, cursor:"pointer", letterSpacing:0.5, boxShadow:"0 8px 32px rgba(124,58,237,0.4)" },
+  infoRow:        { display:"flex", gap:12, justifyContent:"center", marginBottom:22 },
+  infoBox:        { display:"flex", flexDirection:"column", alignItems:"center", background:"rgba(167,139,250,0.08)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:16, padding:"14px 22px" },
+  infoNum:        { fontSize:24, fontWeight:900, color:"#a78bfa", lineHeight:1 },
+  infoLabel:      { fontSize:10, color:"#64748b", letterSpacing:1, marginTop:4, fontFamily:"monospace" },
+  certPreview:    { background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.3)", borderRadius:12, padding:"11px 14px", fontSize:12.5, color:"#cbd5e1", marginBottom:22, lineHeight:1.55 },
+  startBtn:       { width:"100%", padding:"15px", background:"linear-gradient(135deg,#7c3aed,#a78bfa)", color:"#fff", border:"none", borderRadius:14, fontSize:15, fontWeight:700, cursor:"pointer", letterSpacing:0.3, boxShadow:"0 8px 32px rgba(124,58,237,0.4)" },
   entryActions:   { display:"grid", gap:10 },
-  kidsEntryBtn:   { width:"100%", padding:"14px", background:"linear-gradient(135deg,#ff9f1c,#ffbf69)", color:"#3a1f00", border:"none", borderRadius:14, fontSize:15, fontWeight:800, cursor:"pointer", letterSpacing:0.3, boxShadow:"0 8px 24px rgba(255,159,28,0.35)" },
+  activitySection:{ marginTop:18, marginBottom:18, textAlign:"left" },
+  activityHeader: { display:"flex", justifyContent:"flex-start", alignItems:"center", gap:10, marginBottom:8, flexWrap:"wrap" },
+  activityBadge:  { display:"inline-flex", alignItems:"center", background:"rgba(16,185,129,0.12)", color:"#86efac", border:"1px solid rgba(110,231,183,0.26)", borderRadius:999, padding:"4px 10px", fontSize:9.5, letterSpacing:1, fontFamily:"monospace", textTransform:"uppercase" },
+  activityViewport:{ overflow:"hidden", borderRadius:14, border:"1px solid rgba(255,255,255,0.08)", background:"rgba(15,23,42,0.5)", padding:"12px 0" },
+  activityTrack:  { display:"flex", width:"max-content", animation:"landingTickerMove 34s linear infinite" },
+  activityPill:   { display:"inline-flex", alignItems:"center", gap:10, whiteSpace:"nowrap", padding:"0 18px", color:"#dbeafe", fontSize:12.5 },
+  activityName:   { color:"#f8fafc", fontWeight:700 },
+  activityTime:   { color:"#6ee7b7", fontSize:11, fontFamily:"monospace" },
+  linkSections:   { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:14, marginTop:8, marginBottom:4 },
+  linkPanel:      { textAlign:"left", background:"rgba(255,255,255,0.035)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:18, padding:"14px 14px" },
+  linkPanelTitle: { color:"#cbd5e1", fontSize:13, fontWeight:700, marginBottom:7 },
+  linkButton:     { width:"100%", background:"transparent", border:"none", borderBottom:"1px solid rgba(255,255,255,0.05)", color:"#cbd5e1", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 0", cursor:"pointer", fontSize:11.5, textAlign:"left" },
+  linkHint:       { color:"#64748b", fontSize:9.5, fontFamily:"monospace", marginLeft:10 },
+  kidsEntryBtn:   { width:"100%", padding:"14px", background:"linear-gradient(135deg,#ff9f1c,#ffbf69)", color:"#3a1f00", border:"none", borderRadius:14, fontSize:14, fontWeight:800, cursor:"pointer", letterSpacing:0.2, boxShadow:"0 8px 24px rgba(255,159,28,0.35)" },
   disclaimer:     { color:"#475569", fontSize:11, marginTop:16, fontFamily:"monospace" },
   kidsPage:       { minHeight:"100vh", background:"linear-gradient(160deg,#fff7ed 0%,#fffbeb 50%,#ecfeff 100%)", display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"28px 14px", fontFamily:"'Trebuchet MS','Verdana',sans-serif" },
   kidsCard:       { width:"100%", maxWidth:760, background:"#ffffff", border:"2px solid #fed7aa", borderRadius:24, padding:"26px 22px", boxShadow:"0 16px 40px rgba(251,146,60,0.18)" },
