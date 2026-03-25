@@ -10,6 +10,110 @@ const TOTAL_TIME = 20 * 60;
 //  SVG SHAPE RENDERER — used for visual matrix questions
 // ─────────────────────────────────────────────────────────
 const OPTION_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const KIDS_GAMES = [
+  { id: "shape_match", title: "Shape Match", subtitle: "Pick the same shape", level: "Easy", time: "2 min" },
+  { id: "odd_one", title: "Odd One Out", subtitle: "Find the different shape", level: "Easy", time: "2 min" },
+  { id: "count_shapes", title: "Count Shapes", subtitle: "Count target symbols", level: "Easy-Medium", time: "3 min" },
+  { id: "next_pattern", title: "Next Pattern", subtitle: "Choose what comes next", level: "Medium", time: "3 min" },
+];
+
+const kidCell = (outer, inner, fill, extra = {}) => ({ outer, inner, fill, ...extra });
+
+const shuffleList = (items) => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
+function makeKidsRound(gameId) {
+  const shapePool = [
+    kidCell("circle", "dot", "black"),
+    kidCell("square", "dot", "gray"),
+    kidCell("triangle", "dot", "black"),
+    kidCell("circle", "square", "gray"),
+    kidCell("square", "circle", "black"),
+    kidCell("triangle", "square", "gray"),
+  ];
+
+  if (gameId === "shape_match") {
+    const target = shapePool[Math.floor(Math.random() * shapePool.length)];
+    const wrong = shuffleList(shapePool.filter(s => JSON.stringify(s) !== JSON.stringify(target))).slice(0, 3);
+    const options = shuffleList([target, ...wrong]);
+    return {
+      gameId,
+      title: "Tap the same shape",
+      mode: "visual_options",
+      promptCell: target,
+      options,
+      answer: options.findIndex(s => JSON.stringify(s) === JSON.stringify(target)),
+      points: 3,
+    };
+  }
+
+  if (gameId === "odd_one") {
+    const base = shapePool[Math.floor(Math.random() * shapePool.length)];
+    const oddChoices = shapePool.filter(s => JSON.stringify(s) !== JSON.stringify(base));
+    const odd = oddChoices[Math.floor(Math.random() * oddChoices.length)];
+    const cards = [base, base, base, odd];
+    const shuffled = shuffleList(cards);
+    return {
+      gameId,
+      title: "Find the different one",
+      mode: "odd_one",
+      cards: shuffled,
+      answer: shuffled.findIndex(s => JSON.stringify(s) === JSON.stringify(odd)),
+      points: 3,
+    };
+  }
+
+  if (gameId === "count_shapes") {
+    const targetOuter = ["circle", "square", "triangle"][Math.floor(Math.random() * 3)];
+    const cells = Array.from({ length: 9 }, () =>
+      kidCell(["circle", "square", "triangle"][Math.floor(Math.random() * 3)], "dot", ["black", "gray", "white"][Math.floor(Math.random() * 3)])
+    );
+    const targetCount = 3 + Math.floor(Math.random() * 4); // 3-6
+    for (let i = 0; i < cells.length; i++) {
+      cells[i].outer = i < targetCount ? targetOuter : cells[i].outer;
+    }
+    const shuffledCells = shuffleList(cells);
+    const answerNumber = shuffledCells.filter(c => c.outer === targetOuter).length;
+    const options = shuffleList([answerNumber, answerNumber - 1, answerNumber + 1, answerNumber + 2].filter(n => n > 0)).slice(0, 4);
+    return {
+      gameId,
+      title: `How many ${targetOuter}s do you see?`,
+      mode: "count_shapes",
+      cells: shuffledCells,
+      options,
+      answer: options.indexOf(answerNumber),
+      points: 4,
+    };
+  }
+
+  const seq = [
+    kidCell("circle", "dot", "black"),
+    kidCell("square", "dot", "gray"),
+    kidCell("triangle", "dot", "white"),
+    kidCell("circle", "dot", "black"),
+  ];
+  const options = shuffleList([
+    seq[3],
+    kidCell("triangle", "dot", "black"),
+    kidCell("square", "dot", "black"),
+    kidCell("circle", "square", "gray"),
+  ]);
+  return {
+    gameId: "next_pattern",
+    title: "What comes next?",
+    mode: "next_pattern",
+    sequence: seq.slice(0, 3),
+    options,
+    answer: options.findIndex(s => JSON.stringify(s) === JSON.stringify(seq[3])),
+    points: 4,
+  };
+}
 
 function SVGCell({ cell, size = 64 }) {
   if (!cell) return null;
@@ -361,6 +465,11 @@ export default function IQTest() {
   const [paid,          setPaid]          = useState(false);
   const [certGenerated, setCertGenerated] = useState(false);
   const [generating,    setGenerating]    = useState(false);
+  const [kidsGameId,    setKidsGameId]    = useState(null);
+  const [kidsRound,     setKidsRound]     = useState(null);
+  const [kidsSelected,  setKidsSelected]  = useState(null);
+  const [kidsLastWin,   setKidsLastWin]   = useState(false);
+  const [kidsProfile,   setKidsProfile]   = useState({ stars: 0, played: 0, correct: 0 });
 
   const timerRef  = useRef(null);
   const canvasRef = useRef(null);
@@ -416,6 +525,39 @@ export default function IQTest() {
     setTimeLeft(TOTAL_TIME); setPaid(false); setCertGenerated(false); setCertName("");
   };
 
+  const openKidsZone = () => {
+    setScreen("kids_home");
+    setKidsGameId(null);
+    setKidsRound(null);
+    setKidsSelected(null);
+  };
+
+  const startKidsGame = (gameId) => {
+    setKidsGameId(gameId);
+    setKidsRound(makeKidsRound(gameId));
+    setKidsSelected(null);
+    setScreen("kids_game");
+  };
+
+  const submitKidsAnswer = () => {
+    if (!kidsRound || kidsSelected === null) return;
+    const won = kidsSelected === kidsRound.answer;
+    setKidsLastWin(won);
+    setKidsProfile(prev => ({
+      stars: prev.stars + (won ? kidsRound.points : 1),
+      played: prev.played + 1,
+      correct: prev.correct + (won ? 1 : 0),
+    }));
+    setScreen("kids_result");
+  };
+
+  const playKidsAgain = () => {
+    if (!kidsGameId) return;
+    setKidsRound(makeKidsRound(kidsGameId));
+    setKidsSelected(null);
+    setScreen("kids_game");
+  };
+
   const progress    = (current / QUESTIONS.length) * 100;
   const timerUrgent = timeLeft < 120;
   const q           = QUESTIONS[current];
@@ -430,6 +572,130 @@ export default function IQTest() {
   };
 
   // ── INTRO ─────────────────────────────────────────────
+  if (screen === "kids_home") return (
+    <div style={S.kidsPage}>
+      <div style={S.kidsCard}>
+        <div style={S.kidsTopRow}>
+          <button style={S.kidsBackBtn} onClick={() => setScreen("intro")}>Back to Main Test</button>
+          <div style={S.kidsAgeTag}>Ages 4-8</div>
+        </div>
+        <h1 style={S.kidsTitle}>Kids Zone</h1>
+        <p style={S.kidsSubtitle}>Play short learning games with shapes, patterns, and counting.</p>
+
+        <div style={S.kidsStatRow}>
+          <div style={S.kidsStatBox}><strong>{kidsProfile.stars}</strong><span>Stars</span></div>
+          <div style={S.kidsStatBox}><strong>{kidsProfile.played}</strong><span>Games</span></div>
+          <div style={S.kidsStatBox}><strong>{kidsProfile.played ? Math.round((kidsProfile.correct / kidsProfile.played) * 100) : 0}%</strong><span>Success</span></div>
+        </div>
+
+        <div style={S.kidsGameGrid}>
+          {KIDS_GAMES.map(game => (
+            <div key={game.id} style={S.kidsGameCard}>
+              <h3 style={S.kidsGameTitle}>{game.title}</h3>
+              <p style={S.kidsGameSub}>{game.subtitle}</p>
+              <div style={S.kidsMeta}>{game.level} - {game.time}</div>
+              <button style={S.kidsStartBtn} onClick={() => startKidsGame(game.id)}>Start Game</button>
+            </div>
+          ))}
+        </div>
+
+        <div style={S.kidsParentCard}>
+          <div style={S.kidsParentTitle}>Parent Preview</div>
+          <p style={S.kidsParentText}>Tracks stars earned, games played, and success rate. This starter dashboard can be expanded later.</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (screen === "kids_game" && kidsRound) return (
+    <div style={S.kidsPage}>
+      <div style={S.kidsCard}>
+        <div style={S.kidsTopRow}>
+          <button style={S.kidsBackBtn} onClick={() => setScreen("kids_home")}>Back to Kids Home</button>
+          <div style={S.kidsAgeTag}>Mini Game</div>
+        </div>
+
+        <h2 style={S.kidsPromptTitle}>{kidsRound.title}</h2>
+
+        {kidsRound.mode === "visual_options" && (
+          <>
+            <div style={S.kidsPromptVisual}><SVGCell cell={kidsRound.promptCell} size={88} /></div>
+            <div style={S.kidsOptionGrid}>
+              {kidsRound.options.map((opt, idx) => (
+                <button key={idx} style={{ ...S.kidsOptionBtn, ...(kidsSelected === idx ? S.kidsOptionSelected : {}) }} onClick={() => setKidsSelected(idx)}>
+                  <SVGCell cell={opt} size={72} />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {kidsRound.mode === "odd_one" && (
+          <div style={S.kidsOptionGrid}>
+            {kidsRound.cards.map((opt, idx) => (
+              <button key={idx} style={{ ...S.kidsOptionBtn, ...(kidsSelected === idx ? S.kidsOptionSelected : {}) }} onClick={() => setKidsSelected(idx)}>
+                <SVGCell cell={opt} size={72} />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {kidsRound.mode === "count_shapes" && (
+          <>
+            <div style={S.kidsCountGrid}>
+              {kidsRound.cells.map((c, idx) => <SVGCell key={idx} cell={c} size={56} />)}
+            </div>
+            <div style={S.kidsNumberGrid}>
+              {kidsRound.options.map((num, idx) => (
+                <button key={idx} style={{ ...S.kidsNumBtn, ...(kidsSelected === idx ? S.kidsNumSelected : {}) }} onClick={() => setKidsSelected(idx)}>{num}</button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {kidsRound.mode === "next_pattern" && (
+          <>
+            <div style={S.kidsSequenceRow}>
+              {kidsRound.sequence.map((c, idx) => <SVGCell key={idx} cell={c} size={66} />)}
+              <div style={S.kidsQuestionMark}>?</div>
+            </div>
+            <div style={S.kidsOptionGrid}>
+              {kidsRound.options.map((opt, idx) => (
+                <button key={idx} style={{ ...S.kidsOptionBtn, ...(kidsSelected === idx ? S.kidsOptionSelected : {}) }} onClick={() => setKidsSelected(idx)}>
+                  <SVGCell cell={opt} size={72} />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <button style={{ ...S.kidsStartBtn, opacity: kidsSelected === null ? 0.5 : 1 }} disabled={kidsSelected === null} onClick={submitKidsAnswer}>
+          Check Answer
+        </button>
+      </div>
+    </div>
+  );
+
+  if (screen === "kids_result") return (
+    <div style={S.kidsPage}>
+      <div style={S.kidsCard}>
+        <h2 style={S.kidsPromptTitle}>{kidsLastWin ? "Great Job!" : "Nice Try!"}</h2>
+        <p style={S.kidsSubtitle}>
+          {kidsLastWin ? "You got it right and earned bonus stars." : "Keep practicing. You still earned a star for effort."}
+        </p>
+        <div style={S.kidsStatRow}>
+          <div style={S.kidsStatBox}><strong>{kidsProfile.stars}</strong><span>Total Stars</span></div>
+          <div style={S.kidsStatBox}><strong>{kidsProfile.played}</strong><span>Games Played</span></div>
+          <div style={S.kidsStatBox}><strong>{kidsProfile.correct}</strong><span>Correct</span></div>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button style={S.kidsStartBtn} onClick={playKidsAgain}>Play Again</button>
+          <button style={S.kidsBackBtn} onClick={() => setScreen("kids_home")}>Choose Another Game</button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (screen === "intro") return (
     <div style={S.page}>
       <div style={S.card}>
@@ -449,7 +715,10 @@ export default function IQTest() {
         <div style={S.certPreview}>
           🎓 <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> — Download your verified IQ certificate for {CERT_PRICE}
         </div>
-        <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment →</button>
+        <div style={S.entryActions}>
+          <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment</button>
+          <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8)</button>
+        </div>
         <p style={S.disclaimer}>Issued by {AUTHORITY} · Questions randomised each session</p>
       </div>
     </div>
@@ -663,7 +932,38 @@ const S = {
   infoLabel:      { fontSize:11, color:"#64748b", letterSpacing:1, marginTop:2, fontFamily:"monospace" },
   certPreview:    { background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.3)", borderRadius:12, padding:"12px 16px", fontSize:13, color:"#cbd5e1", marginBottom:24, lineHeight:1.6 },
   startBtn:       { width:"100%", padding:"16px", background:"linear-gradient(135deg,#7c3aed,#a78bfa)", color:"#fff", border:"none", borderRadius:14, fontSize:16, fontWeight:700, cursor:"pointer", letterSpacing:0.5, boxShadow:"0 8px 32px rgba(124,58,237,0.4)" },
+  entryActions:   { display:"grid", gap:10 },
+  kidsEntryBtn:   { width:"100%", padding:"14px", background:"linear-gradient(135deg,#ff9f1c,#ffbf69)", color:"#3a1f00", border:"none", borderRadius:14, fontSize:15, fontWeight:800, cursor:"pointer", letterSpacing:0.3, boxShadow:"0 8px 24px rgba(255,159,28,0.35)" },
   disclaimer:     { color:"#475569", fontSize:11, marginTop:16, fontFamily:"monospace" },
+  kidsPage:       { minHeight:"100vh", background:"linear-gradient(160deg,#fff7ed 0%,#fffbeb 50%,#ecfeff 100%)", display:"flex", justifyContent:"center", alignItems:"flex-start", padding:"28px 14px", fontFamily:"'Trebuchet MS','Verdana',sans-serif" },
+  kidsCard:       { width:"100%", maxWidth:760, background:"#ffffff", border:"2px solid #fed7aa", borderRadius:24, padding:"26px 22px", boxShadow:"0 16px 40px rgba(251,146,60,0.18)" },
+  kidsTopRow:     { display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, flexWrap:"wrap", marginBottom:12 },
+  kidsBackBtn:    { padding:"10px 14px", background:"#ffffff", color:"#7c2d12", border:"1px solid #fdba74", borderRadius:10, fontSize:13, fontWeight:700, cursor:"pointer" },
+  kidsAgeTag:     { padding:"6px 12px", background:"#fff7ed", color:"#b45309", border:"1px solid #fdba74", borderRadius:999, fontSize:12, fontWeight:800, letterSpacing:0.4 },
+  kidsTitle:      { margin:"0 0 6px", color:"#1f2937", fontSize:40, lineHeight:1.05, fontWeight:900 },
+  kidsSubtitle:   { margin:"0 0 16px", color:"#4b5563", fontSize:15, lineHeight:1.5 },
+  kidsStatRow:    { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", gap:10, marginBottom:16 },
+  kidsStatBox:    { background:"#fef3c7", border:"1px solid #fcd34d", borderRadius:14, padding:"12px 10px", textAlign:"center", display:"flex", flexDirection:"column", gap:4, color:"#78350f", fontSize:12 },
+  kidsGameGrid:   { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:10, marginBottom:14 },
+  kidsGameCard:   { background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:14, padding:"12px 10px", display:"flex", flexDirection:"column", gap:6 },
+  kidsGameTitle:  { margin:0, color:"#1e3a8a", fontSize:17, fontWeight:900 },
+  kidsGameSub:    { margin:0, color:"#334155", fontSize:12 },
+  kidsMeta:       { color:"#475569", fontSize:11, fontWeight:700 },
+  kidsStartBtn:   { padding:"12px 14px", background:"linear-gradient(135deg,#22c55e,#16a34a)", color:"#fff", border:"none", borderRadius:12, fontSize:14, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 20px rgba(22,163,74,0.25)" },
+  kidsParentCard: { background:"#f0fdf4", border:"1px solid #86efac", borderRadius:14, padding:"12px 14px" },
+  kidsParentTitle:{ color:"#166534", fontSize:14, fontWeight:900, marginBottom:4 },
+  kidsParentText: { color:"#14532d", fontSize:12, margin:0, lineHeight:1.5 },
+  kidsPromptTitle:{ margin:"2px 0 12px", color:"#111827", fontSize:28, fontWeight:900 },
+  kidsPromptVisual:{ display:"flex", justifyContent:"center", marginBottom:12 },
+  kidsOptionGrid: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(95px,1fr))", gap:10, marginBottom:14 },
+  kidsOptionBtn:  { background:"#fffbeb", border:"2px solid #fde68a", borderRadius:14, padding:"8px", display:"flex", justifyContent:"center", alignItems:"center", cursor:"pointer", minHeight:88 },
+  kidsOptionSelected:{ border:"2px solid #22c55e", background:"#ecfdf5" },
+  kidsCountGrid:  { display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, justifyItems:"center", marginBottom:12 },
+  kidsNumberGrid: { display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:14 },
+  kidsNumBtn:     { background:"#ffffff", border:"2px solid #cbd5e1", borderRadius:10, padding:"10px 0", fontSize:20, fontWeight:900, color:"#0f172a", cursor:"pointer" },
+  kidsNumSelected:{ border:"2px solid #22c55e", background:"#ecfdf5" },
+  kidsSequenceRow:{ display:"flex", justifyContent:"center", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" },
+  kidsQuestionMark:{ width:66, height:66, borderRadius:12, border:"2px dashed #f59e0b", display:"flex", alignItems:"center", justifyContent:"center", color:"#b45309", fontSize:28, fontWeight:900, background:"#fff7ed" },
   testCard:       { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:24, padding:"36px 32px", maxWidth:600, width:"100%", backdropFilter:"blur(20px)" },
   testHeader:     { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 },
   qCounter:       { color:"#94a3b8", fontSize:13, fontFamily:"monospace" },
