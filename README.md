@@ -2,6 +2,24 @@
 
 IQ test web app with paid certificate unlock using Razorpay Checkout + backend verification.
 
+## Production (Vercel Same-Origin API)
+
+This repo now includes serverless API routes under `/api`:
+- `/api/health`
+- `/api/payment/create-order`
+- `/api/payment/verify`
+- `/api/razorpay/webhook`
+
+Deploy this repo on Vercel and set these project environment variables:
+- `RAZORPAY_KEY_ID`
+- `RAZORPAY_KEY_SECRET`
+- `RAZORPAY_WEBHOOK_SECRET`
+- Optional: `CERTIFICATE_AMOUNT_PAISE` (default `3900`)
+- Optional: `CERTIFICATE_CURRENCY` (default `INR`)
+
+If frontend and API are deployed from the same Vercel project/domain, keep `VITE_API_BASE_URL` empty.
+Frontend will call same-origin `/api/...`.
+
 ## Run Locally
 
 1. Install dependencies:

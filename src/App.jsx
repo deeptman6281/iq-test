@@ -6,7 +6,9 @@ const AUTHORITY  = "NeuroMark Institute";
 const CERT_PRICE = "\u20B939";
 const TOTAL_TIME = 20 * 60;
 const ENV_API_BASE = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/$/, "");
-const STATIC_FALLBACK_API_BASES = ["https://api.brainrank.org", "http://localhost:8787"];
+const STATIC_FALLBACK_API_BASES = import.meta.env.DEV
+  ? ["http://localhost:8787"]
+  : ["https://api.brainrank.org"];
 
 const unique = (items) => [...new Set(items.filter(Boolean))];
 const buildApiUrl = (base, path) => (base ? `${base}${path}` : path);
