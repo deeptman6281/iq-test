@@ -631,10 +631,6 @@ export default function IQTest() {
         description: "IQ Certificate Payment",
         order_id: orderData.orderId,
         prefill: { name: certName.trim() },
-        hidden: {
-          contact: true,
-          email: true,
-        },
         notes: { certificate_name: certName.trim() },
         theme: { color: "#2563eb" },
         handler: async (response) => {
