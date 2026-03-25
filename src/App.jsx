@@ -577,7 +577,7 @@ export default function IQTest() {
       <div style={S.kidsCard}>
         <div style={S.kidsTopRow}>
           <button style={S.kidsBackBtn} onClick={() => setScreen("intro")}>Back to Main Test</button>
-          <div style={S.kidsAgeTag}>Ages 4-8</div>
+          <div style={S.kidsAgeTag}>Ages 4-8 years</div>
         </div>
         <h1 style={S.kidsTitle}>Kids Zone</h1>
         <p style={S.kidsSubtitle}>Play short learning games with shapes, patterns, and counting.</p>
@@ -717,7 +717,7 @@ export default function IQTest() {
         </div>
         <div style={S.entryActions}>
           <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment</button>
-          <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8)</button>
+          <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8 years)</button>
         </div>
         <p style={S.disclaimer}>Issued by {AUTHORITY} · Questions randomised each session</p>
       </div>
