@@ -5,8 +5,59 @@ import { pickRandomQuestions, ALL_CATEGORIES } from "./questions.js";
 const AUTHORITY  = "NeuroMark Institute";
 const CERT_PRICE = "\u20B939";
 const TOTAL_TIME = 20 * 60;
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-const apiUrl = (path) => `${API_BASE}${path}`;
+const ENV_API_BASE = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/$/, "");
+const STATIC_FALLBACK_API_BASES = ["https://api.brainrank.org", "http://localhost:8787"];
+
+const unique = (items) => [...new Set(items.filter(Boolean))];
+const buildApiUrl = (base, path) => (base ? `${base}${path}` : path);
+
+function getCandidateApiBases() {
+  const runtimeBases = [];
+  if (typeof window !== "undefined") {
+    const origin = window.location.origin?.replace(/\/$/, "");
+    runtimeBases.push("", origin);
+  } else {
+    runtimeBases.push("");
+  }
+  return unique([ENV_API_BASE, ...runtimeBases, ...STATIC_FALLBACK_API_BASES]);
+}
+
+async function readJsonSafe(response) {
+  const raw = await response.text();
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { error: raw.slice(0, 200) };
+  }
+}
+
+async function postPaymentJson(path, payload, fixedBase) {
+  const bases = fixedBase !== undefined ? [fixedBase] : getCandidateApiBases();
+  let lastError = new Error("Unable to reach payment server.");
+
+  for (const base of bases) {
+    const url = buildApiUrl(base, path);
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await readJsonSafe(response);
+      if (!response.ok) {
+        const message = data?.error || `HTTP ${response.status} ${response.statusText}`;
+        lastError = new Error(`${message} (${url})`);
+        continue;
+      }
+      return { data, base };
+    } catch (error) {
+      lastError = new Error(`${error?.message || "Network error"} (${url})`);
+    }
+  }
+
+  throw lastError;
+}
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  SVG SHAPE RENDERER â€” used for visual matrix questions
@@ -542,16 +593,10 @@ export default function IQTest() {
         return;
       }
 
-      const orderRes = await fetch(apiUrl("/api/payment/create-order"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ certName: certName.trim() }),
-      });
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) {
-        alert(orderData.error || "Could not create payment order.");
-        return;
-      }
+      const { data: orderData, base: activeApiBase } = await postPaymentJson(
+        "/api/payment/create-order",
+        { certName: certName.trim() }
+      );
 
       const options = {
         key: orderData.keyId,
@@ -564,23 +609,26 @@ export default function IQTest() {
         notes: { certificate_name: certName.trim() },
         theme: { color: "#2563eb" },
         handler: async (response) => {
-          const verifyRes = await fetch(apiUrl("/api/payment/verify"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: response.razorpay_order_id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
-            }),
-          });
-          const verifyData = await verifyRes.json();
-          if (!verifyRes.ok || !verifyData.success) {
-            alert(verifyData.error || "Payment verification failed.");
-            return;
+          try {
+            const { data: verifyData } = await postPaymentJson(
+              "/api/payment/verify",
+              {
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+              },
+              activeApiBase
+            );
+            if (!verifyData.success) {
+              alert(verifyData.error || "Payment verification failed.");
+              return;
+            }
+            setPaid(true);
+            setShowPaywall(false);
+            alert("Payment verified. Certificate download is unlocked.");
+          } catch (verifyError) {
+            alert(`Payment verification failed. (${verifyError?.message || "unknown error"})`);
           }
-          setPaid(true);
-          setShowPaywall(false);
-          alert("Payment verified. Certificate download is unlocked.");
         },
         modal: {
           ondismiss: () => setPayLoading(false),

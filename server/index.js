@@ -8,7 +8,7 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || "";
 const CERTIFICATE_AMOUNT_PAISE = Number(process.env.CERTIFICATE_AMOUNT_PAISE || 3900);
 const CERTIFICATE_CURRENCY = process.env.CERTIFICATE_CURRENCY || "INR";
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
 
 const app = express();
 const paymentState = new Map();
@@ -25,6 +25,10 @@ app.use(
     },
   })
 );
+
+app.get("/api/health", (_req, res) => {
+  res.json({ ok: true });
+});
 
 function requireConfig(res) {
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
