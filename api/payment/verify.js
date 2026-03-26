@@ -9,6 +9,7 @@ import {
   safeEqualHex,
   sendMethodNotAllowed,
 } from "../_lib/razorpay.js";
+import { unlockResults } from "../../shared/assessment.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -27,9 +28,13 @@ export default async function handler(req, res) {
     const orderId = String(body?.orderId || "");
     const paymentId = String(body?.paymentId || "");
     const signature = String(body?.signature || "");
+    const resultsToken = String(body?.resultsToken || "");
 
     if (!orderId || !paymentId || !signature) {
       return res.status(400).json({ success: false, error: "Missing payment verification fields." });
+    }
+    if (!resultsToken) {
+      return res.status(400).json({ success: false, error: "Missing results token for unlock." });
     }
 
     const { keySecret } = getConfig();
@@ -55,7 +60,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: "Payment details failed verification checks." });
     }
 
-    return res.status(200).json({ success: true });
+    const results = unlockResults(resultsToken);
+    return res.status(200).json({ success: true, results });
   } catch (error) {
     return res.status(500).json({
       success: false,

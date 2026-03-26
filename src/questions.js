@@ -1,6 +1,5 @@
 // ---------------------------------------------------------
-//  QUESTION BANK - 210 questions across 6 categories
-//  35 questions per category
+//  QUESTION BANK
 //  Imported by App.jsx - edit questions here only
 // ---------------------------------------------------------
 
@@ -21,6 +20,242 @@ function shuffleWithAnswer(options, answer) {
     options: keyed.map(item => item.opt),
     answer: keyed.findIndex(item => item.isAnswer),
   };
+}
+
+const VISUAL_SHAPES = ["circle", "square", "triangle"];
+const VISUAL_FILLS = ["black", "gray", "white"];
+const VISUAL_ROTATIONS = [0, 90, 180, 270];
+const VISUAL_SCALES = [0.8, 1.0, 1.2];
+
+const shapeAt = (offset) => VISUAL_SHAPES[((offset % VISUAL_SHAPES.length) + VISUAL_SHAPES.length) % VISUAL_SHAPES.length];
+const fillAt = (offset) => VISUAL_FILLS[((offset % VISUAL_FILLS.length) + VISUAL_FILLS.length) % VISUAL_FILLS.length];
+const rotationAt = (offset) => VISUAL_ROTATIONS[((offset % VISUAL_ROTATIONS.length) + VISUAL_ROTATIONS.length) % VISUAL_ROTATIONS.length];
+const scaleAt = (offset) => VISUAL_SCALES[((offset % VISUAL_SCALES.length) + VISUAL_SCALES.length) % VISUAL_SCALES.length];
+
+function visualKey(cell) {
+  return JSON.stringify({
+    outer: cell.outer,
+    inner: cell.inner,
+    fill: cell.fill,
+    outerFill: cell.outerFill || "white",
+    outerRotation: cell.outerRotation || 0,
+    innerRotation: cell.innerRotation || 0,
+    outerScale: cell.outerScale || 1,
+    innerScale: cell.innerScale || 1,
+  });
+}
+
+function buildVisualOptions(correct, variants) {
+  const unique = [];
+  const seen = new Set([visualKey(correct)]);
+  variants.forEach((variant) => {
+    const key = visualKey(variant);
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(variant);
+    }
+  });
+
+  for (let i = 0; unique.length < 5 && i < 36; i++) {
+    const fallback = vc(
+      shapeAt(i),
+      i % 2 === 0 ? "dot" : shapeAt(i + 1),
+      fillAt(i),
+      { innerRotation: rotationAt(i), innerScale: scaleAt(i) }
+    );
+    const key = visualKey(fallback);
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(fallback);
+    }
+  }
+
+  return [correct, ...unique.slice(0, 5)];
+}
+
+function makeGrid(factory) {
+  return [
+    factory(0, 0), factory(0, 1), factory(0, 2),
+    factory(1, 0), factory(1, 1), factory(1, 2),
+    factory(2, 0), factory(2, 1),
+  ];
+}
+
+const ladderCell = (rungs, taper = 0, lean = 0) => ({ kind: "ladder", rungs, taper, lean });
+const dotsCell = (count, layout = "diagDown") => ({ kind: "dots", count, layout });
+const windowCell = (mask) => ({ kind: "window", mask });
+const splitCircleCell = (angle, invert = false) => ({ kind: "splitCircle", angle, invert });
+const barsCell = (bars, frame = "outline") => ({ kind: "bars", bars, frame });
+
+function buildReferenceOptions(correct, variants) {
+  const unique = [];
+  const seen = new Set([JSON.stringify(correct)]);
+  variants.forEach((variant) => {
+    const key = JSON.stringify(variant);
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(variant);
+    }
+  });
+  return [correct, ...unique.slice(0, 5)];
+}
+
+function createReferenceVisualQuestion(grid, correct, variants) {
+  return {
+    type: "visual",
+    visualStyle: "reference",
+    category: "Pattern Recognition",
+    question: "Which image completes the 3x3 matrix?",
+    grid,
+    options: buildReferenceOptions(correct, variants),
+    answer: 0,
+  };
+}
+
+function normalizeWindowMask(mask) {
+  const cleaned = mask & 15;
+  return cleaned === 0 ? 15 : cleaned;
+}
+
+function buildReferenceLadderQuestions() {
+  const out = [];
+  const taperSets = [
+    [0.0, 0.16, 0.28],
+    [0.08, 0.20, 0.12],
+    [0.18, 0.08, 0.24],
+  ];
+  const leanSets = [
+    [-0.05, 0.0, 0.05],
+    [0.0, 0.04, 0.08],
+    [-0.08, -0.02, 0.04],
+  ];
+
+  for (let i = 0; i < 10; i++) {
+    const base = 2 + (i % 3);
+    const taperCols = taperSets[i % taperSets.length];
+    const leanRows = leanSets[i % leanSets.length];
+    const factory = (row, col) => ladderCell(base + row + col, taperCols[col], leanRows[row]);
+    const correct = factory(2, 2);
+    out.push(createReferenceVisualQuestion(makeGrid(factory), correct, [
+      ladderCell(correct.rungs - 1, correct.taper, correct.lean),
+      ladderCell(correct.rungs + 1, correct.taper, correct.lean),
+      ladderCell(correct.rungs, taperCols[(i + 1) % taperCols.length], correct.lean),
+      ladderCell(correct.rungs, correct.taper, leanRows[(i + 1) % leanRows.length]),
+      ladderCell(Math.max(2, correct.rungs - 1), taperCols[0], leanRows[0]),
+    ]));
+  }
+
+  return out;
+}
+
+function buildReferenceDotQuestions() {
+  const out = [];
+  const layouts = ["center", "diagDown", "diagUp", "diamond", "vertical", "corners"];
+
+  for (let i = 0; i < 10; i++) {
+    const base = 1 + (i % 2);
+    const layoutCols = [
+      layouts[i % layouts.length],
+      layouts[(i + 1) % layouts.length],
+      layouts[(i + 2) % layouts.length],
+    ];
+    const factory = (row, col) => dotsCell(Math.min(6, base + row + col), layoutCols[col]);
+    const correct = factory(2, 2);
+    out.push(createReferenceVisualQuestion(makeGrid(factory), correct, [
+      dotsCell(Math.max(1, correct.count - 1), correct.layout),
+      dotsCell(Math.min(6, correct.count + 1), correct.layout),
+      dotsCell(correct.count, layoutCols[1]),
+      dotsCell(Math.max(1, correct.count - 2), layoutCols[0]),
+      dotsCell(correct.count, layouts[(i + 3) % layouts.length]),
+    ]));
+  }
+
+  return out;
+}
+
+function buildReferenceWindowQuestions() {
+  const out = [];
+  const masks = [1, 2, 4, 8, 3, 5, 6, 9, 10, 12, 15];
+
+  for (let i = 0; i < 10; i++) {
+    const rowMasks = [
+      masks[i % masks.length],
+      masks[(i + 3) % masks.length],
+      masks[(i + 5) % masks.length],
+    ];
+    const colMasks = [
+      masks[(i + 1) % masks.length],
+      masks[(i + 4) % masks.length],
+      masks[(i + 7) % masks.length],
+    ];
+    const factory = (row, col) => windowCell(normalizeWindowMask(rowMasks[row] ^ colMasks[col]));
+    const correct = factory(2, 2);
+    out.push(createReferenceVisualQuestion(makeGrid(factory), correct, [
+      windowCell(normalizeWindowMask(correct.mask ^ 1)),
+      windowCell(normalizeWindowMask(correct.mask ^ 2)),
+      windowCell(normalizeWindowMask(correct.mask ^ 4)),
+      windowCell(normalizeWindowMask(correct.mask ^ 8)),
+      windowCell(normalizeWindowMask(rowMasks[1] ^ colMasks[1])),
+    ]));
+  }
+
+  return out;
+}
+
+function buildReferenceSplitCircleQuestions() {
+  const out = [];
+  const angles = [0, 45, 90, 135];
+
+  for (let i = 0; i < 10; i++) {
+    const baseIndex = i % angles.length;
+    const factory = (row, col) =>
+      splitCircleCell(
+        angles[(baseIndex + row + col) % angles.length],
+        ((row + (i % 2)) % 2) === 1
+      );
+    const correct = factory(2, 2);
+    out.push(createReferenceVisualQuestion(makeGrid(factory), correct, [
+      splitCircleCell(angles[(baseIndex + 2 + 1) % angles.length], correct.invert),
+      splitCircleCell(angles[(baseIndex + 2 + 3) % angles.length], correct.invert),
+      splitCircleCell(correct.angle, !correct.invert),
+      splitCircleCell(angles[(angles.indexOf(correct.angle) + 1) % angles.length], !correct.invert),
+      splitCircleCell(angles[(angles.indexOf(correct.angle) + 2) % angles.length], correct.invert),
+    ]));
+  }
+
+  return out;
+}
+
+function buildReferenceBarsQuestions() {
+  const out = [];
+
+  for (let i = 0; i < 10; i++) {
+    const start = 1 + (i % 2);
+    const factory = (row, col) => {
+      if (row === 1) return barsCell(0, "filled");
+      return barsCell(start + col, row === 0 ? "outline" : "dashed");
+    };
+    const correct = factory(2, 2);
+    out.push(createReferenceVisualQuestion(makeGrid(factory), correct, [
+      barsCell(Math.max(1, correct.bars - 1), "dashed"),
+      barsCell(correct.bars + 1, "dashed"),
+      barsCell(correct.bars, "outline"),
+      barsCell(0, "filled"),
+      barsCell(Math.max(1, correct.bars - 1), "outline"),
+    ]));
+  }
+
+  return out;
+}
+
+function buildGeneratedPatternVisualQuestions() {
+  return [
+    ...buildReferenceLadderQuestions(),
+    ...buildReferenceDotQuestions(),
+    ...buildReferenceWindowQuestions(),
+    ...buildReferenceSplitCircleQuestions(),
+    ...buildReferenceBarsQuestions(),
+  ];
 }
 
 const BASE_QUESTION_BANK = [
@@ -711,6 +946,7 @@ const EXTRA_QUESTIONS = [
   ...buildExtraLogicalQuestions(),
   ...buildExtraPatternTextQuestions(),
   ...buildExtraPatternVisualQuestions(),
+  ...buildGeneratedPatternVisualQuestions(),
   ...buildExtraMathQuestions(),
   ...buildExtraVerbalQuestions(),
   ...buildExtraSpatialQuestions(),
@@ -727,11 +963,20 @@ export function pickRandomQuestions() {
   });
 
   const selected = [];
-  const visualPool = QUESTION_BANK
+  const preferredVisualPool = QUESTION_BANK
     .map((q, idx) => ({ ...q, id: idx }))
-    .filter(q => q.type === "visual")
+    .filter(q => q.type === "visual" && q.visualStyle === "reference");
+  const fallbackVisualPool = QUESTION_BANK
+    .map((q, idx) => ({ ...q, id: idx }))
+    .filter(q => q.type === "visual");
+  const visualPool = (preferredVisualPool.length ? preferredVisualPool : fallbackVisualPool)
     .sort(() => Math.random() - 0.5);
-  selected.push(...visualPool.slice(0, Math.min(2, visualPool.length)));
+  const visualTarget = Math.min(
+    4,
+    Math.max(2, 2 + Math.floor(Math.random() * 3)),
+    visualPool.length
+  );
+  selected.push(...visualPool.slice(0, visualTarget));
 
   const cats = Object.keys(byCategory);
   const perCat = Math.floor(20 / cats.length);
@@ -742,14 +987,14 @@ export function pickRandomQuestions() {
     const needed = Math.max(0, perCat - alreadyInCat);
     const usedIds = new Set(selected.map(q => q.id));
     const pool = byCategory[cat]
-      .filter(q => !usedIds.has(q.id))
+      .filter(q => !usedIds.has(q.id) && q.type !== "visual")
       .sort(() => Math.random() - 0.5);
     selected.push(...pool.slice(0, needed));
   });
 
   const usedIds = new Set(selected.map(q => q.id));
   const remaining = QUESTION_BANK
-    .filter((_, i) => !usedIds.has(i))
+    .filter((q, i) => !usedIds.has(i) && q.type !== "visual")
     .sort(() => Math.random() - 0.5)
     .slice(0, Math.max(0, extra + (20 - selected.length)))
     .map((q, i) => ({ ...q, id: selected.length + i }));

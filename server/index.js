@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import express from "express";
 import cors from "cors";
+import { buildResultsFromAttempt, startAssessmentSession, unlockResults } from "../shared/assessment.js";
 
 const PORT = Number(process.env.PORT || 8787);
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
@@ -104,6 +105,32 @@ app.post("/api/razorpay/webhook", express.raw({ type: "application/json" }), (re
 
 app.use(express.json());
 
+app.post("/api/test/start", (_req, res) => {
+  try {
+    return res.json(startAssessmentSession());
+  } catch {
+    return res.status(500).json({ error: "Unable to start assessment." });
+  }
+});
+
+app.post("/api/test/submit", (req, res) => {
+  const attemptToken = String(req.body?.attemptToken || "");
+  if (!attemptToken) {
+    return res.status(400).json({ error: "Missing attempt token." });
+  }
+
+  try {
+    const { lockedResults } = buildResultsFromAttempt(
+      attemptToken,
+      req.body?.answers || {},
+      req.body?.timeUsed || 0
+    );
+    return res.json(lockedResults);
+  } catch {
+    return res.status(400).json({ error: "Unable to submit assessment." });
+  }
+});
+
 app.post("/api/payment/create-order", async (req, res) => {
   if (!requireConfig(res)) return;
 
@@ -160,10 +187,14 @@ app.post("/api/payment/verify", async (req, res) => {
   const orderId = String(req.body?.orderId || "");
   const paymentId = String(req.body?.paymentId || "");
   const signature = String(req.body?.signature || "");
+  const resultsToken = String(req.body?.resultsToken || "");
   const knownOrder = paymentState.get(orderId);
 
   if (!orderId || !paymentId || !signature) {
     return res.status(400).json({ error: "Missing payment verification fields." });
+  }
+  if (!resultsToken) {
+    return res.status(400).json({ success: false, error: "Missing results token for unlock." });
   }
   if (!knownOrder) {
     return res.status(400).json({ success: false, error: "Unknown order. Create order from this app first." });
@@ -204,7 +235,8 @@ app.post("/api/payment/verify", async (req, res) => {
       paidAt: Date.now(),
     });
 
-    return res.json({ success: true });
+    const results = unlockResults(resultsToken);
+    return res.json({ success: true, results });
   } catch {
     return res.status(500).json({ success: false, error: "Payment verification failed due to server error." });
   }

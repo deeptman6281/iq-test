@@ -1,10 +1,17 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { jsPDF } from "jspdf";
-import { pickRandomQuestions, ALL_CATEGORIES } from "./questions.js";
 
 const AUTHORITY  = "NeuroMark Institute";
 const CERT_PRICE = "\u20B939";
 const TOTAL_TIME = 20 * 60;
+const ALL_CATEGORIES = [
+  "Logical Reasoning",
+  "Pattern Recognition",
+  "Math / Numerical",
+  "Verbal / Language",
+  "Spatial Reasoning",
+  "Working Memory",
+];
 const ENV_API_BASE = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/$/, "");
 const STATIC_FALLBACK_API_BASES = import.meta.env.DEV
   ? ["http://localhost:8787"]
@@ -34,7 +41,7 @@ async function readJsonSafe(response) {
   }
 }
 
-async function postPaymentJson(path, payload, fixedBase, validate) {
+async function postApiJson(path, payload, fixedBase, validate) {
   const bases = fixedBase !== undefined ? [fixedBase] : getCandidateApiBases();
   const attempts = [];
   let lastError = new Error("Unable to reach payment server.");
@@ -283,6 +290,203 @@ function makeKidsRound(gameId) {
 function SVGCell({ cell, size = 64 }) {
   if (!cell) return null;
 
+  const c = size / 2;
+  const dotLayouts = {
+    center: [
+      [0.5, 0.5], [0.35, 0.35], [0.65, 0.65], [0.35, 0.65], [0.65, 0.35], [0.5, 0.25],
+    ],
+    diagDown: [
+      [0.32, 0.28], [0.46, 0.42], [0.60, 0.56], [0.74, 0.70], [0.28, 0.74], [0.72, 0.26],
+    ],
+    diagUp: [
+      [0.30, 0.70], [0.44, 0.56], [0.58, 0.42], [0.72, 0.28], [0.28, 0.30], [0.72, 0.72],
+    ],
+    diamond: [
+      [0.50, 0.24], [0.34, 0.42], [0.66, 0.42], [0.50, 0.60], [0.34, 0.78], [0.66, 0.78],
+    ],
+    vertical: [
+      [0.50, 0.22], [0.50, 0.38], [0.50, 0.54], [0.50, 0.70], [0.34, 0.46], [0.66, 0.46],
+    ],
+    corners: [
+      [0.30, 0.30], [0.70, 0.30], [0.30, 0.70], [0.70, 0.70], [0.50, 0.50], [0.50, 0.22],
+    ],
+  };
+
+  if (cell.kind === "ladder") {
+    const bg = "#f5f0e6";
+    const stroke = "#27303f";
+    const railStroke = Math.max(2, size * 0.055);
+    const rungStroke = Math.max(1.6, size * 0.04);
+    const rungs = Math.max(2, Math.min(7, cell.rungs || 3));
+    const topY = size * 0.16;
+    const bottomY = size * 0.84;
+    const bottomHalf = size * 0.22;
+    const taper = Math.max(0, Math.min(0.32, cell.taper || 0));
+    const topHalf = bottomHalf * (1 - taper);
+    const lean = (cell.lean || 0) * size;
+    const topLeft = c - topHalf + lean;
+    const topRight = c + topHalf + lean;
+    const bottomLeft = c - bottomHalf - lean * 0.2;
+    const bottomRight = c + bottomHalf - lean * 0.2;
+
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <rect width={size} height={size} rx="10" fill={bg} />
+        <line x1={topLeft} y1={topY} x2={bottomLeft} y2={bottomY} stroke={stroke} strokeWidth={railStroke} strokeLinecap="round" />
+        <line x1={topRight} y1={topY} x2={bottomRight} y2={bottomY} stroke={stroke} strokeWidth={railStroke} strokeLinecap="round" />
+        {Array.from({ length: rungs }).map((_, idx) => {
+          const t = (idx + 1) / (rungs + 1);
+          const x1 = topLeft + (bottomLeft - topLeft) * t;
+          const x2 = topRight + (bottomRight - topRight) * t;
+          const y = topY + (bottomY - topY) * t;
+          return (
+            <line
+              key={idx}
+              x1={x1}
+              y1={y}
+              x2={x2}
+              y2={y}
+              stroke={stroke}
+              strokeWidth={rungStroke}
+              strokeLinecap="round"
+            />
+          );
+        })}
+      </svg>
+    );
+  }
+
+  if (cell.kind === "dots") {
+    const bg = "#3182d7";
+    const points = (dotLayouts[cell.layout] || dotLayouts.diagDown).slice(0, Math.max(1, Math.min(6, cell.count || 1)));
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <rect width={size} height={size} rx="12" fill={bg} />
+        {points.map(([px, py], idx) => (
+          <circle
+            key={idx}
+            cx={px * size}
+            cy={py * size}
+            r={Math.max(2.4, size * 0.055)}
+            fill="#ffffff"
+          />
+        ))}
+      </svg>
+    );
+  }
+
+  if (cell.kind === "window") {
+    const bg = "#3182d7";
+    const inner = size * 0.56;
+    const pane = inner / 2 - size * 0.02;
+    const start = (size - inner) / 2;
+    const fills = [1, 2, 4, 8].map((bit) => Boolean((cell.mask || 0) & bit));
+    const coords = [
+      [start, start],
+      [start + inner / 2 + size * 0.01, start],
+      [start, start + inner / 2 + size * 0.01],
+      [start + inner / 2 + size * 0.01, start + inner / 2 + size * 0.01],
+    ];
+
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <rect width={size} height={size} rx="12" fill={bg} />
+        {coords.map(([x, y], idx) => (
+          <rect
+            key={idx}
+            x={x}
+            y={y}
+            width={pane}
+            height={pane}
+            rx={size * 0.02}
+            fill={fills[idx] ? "#ffffff" : "transparent"}
+            stroke="#ffffff"
+            strokeWidth={Math.max(1.4, size * 0.03)}
+          />
+        ))}
+      </svg>
+    );
+  }
+
+  if (cell.kind === "splitCircle") {
+    const bg = "#3182d7";
+    const r = size * 0.22;
+    const clipId = `clip-${size}-${cell.angle || 0}-${cell.invert ? 1 : 0}`;
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <rect width={size} height={size} rx="12" fill={bg} />
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx={c} cy={c} r={r} />
+          </clipPath>
+        </defs>
+        <g clipPath={`url(#${clipId})`} transform={`rotate(${cell.angle || 0} ${c} ${c})`}>
+          <rect
+            x={c - r - 2}
+            y={cell.invert ? c : c - r - 2}
+            width={r * 2 + 4}
+            height={r + 4}
+            fill="#ffffff"
+          />
+        </g>
+        <circle cx={c} cy={c} r={r} fill="none" stroke="#ffffff" strokeWidth={Math.max(1.8, size * 0.035)} />
+        <line
+          x1={c - r}
+          y1={c}
+          x2={c + r}
+          y2={c}
+          transform={`rotate(${cell.angle || 0} ${c} ${c})`}
+          stroke="#ffffff"
+          strokeWidth={Math.max(1.6, size * 0.03)}
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
+
+  if (cell.kind === "bars") {
+    const bg = "#3182d7";
+    const frameSize = size * 0.46;
+    const start = (size - frameSize) / 2;
+    const strokeWidth = Math.max(1.6, size * 0.03);
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <rect width={size} height={size} rx="12" fill={bg} />
+        {cell.frame === "filled" ? (
+          <rect x={start} y={start} width={frameSize} height={frameSize} fill="#ffffff" />
+        ) : (
+          <>
+            <rect
+              x={start}
+              y={start}
+              width={frameSize}
+              height={frameSize}
+              fill="transparent"
+              stroke="#ffffff"
+              strokeWidth={strokeWidth}
+              strokeDasharray={cell.frame === "dashed" ? `${strokeWidth * 1.8} ${strokeWidth * 1.2}` : undefined}
+            />
+            {Array.from({ length: Math.max(1, cell.bars || 1) }).map((_, idx) => {
+              const y = start + ((idx + 1) * frameSize) / (Math.max(1, cell.bars || 1) + 1);
+              return (
+                <line
+                  key={idx}
+                  x1={start + frameSize * 0.08}
+                  y1={y}
+                  x2={start + frameSize * 0.92}
+                  y2={y}
+                  stroke="#ffffff"
+                  strokeWidth={strokeWidth * 0.8}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+          </>
+        )}
+      </svg>
+    );
+  }
+
   const {
     outer = "none",
     inner = "none",
@@ -294,7 +498,6 @@ function SVGCell({ cell, size = 64 }) {
     innerScale = 1,
   } = cell;
 
-  const c = size / 2;
   const pad = size * 0.12;
   const outerSpan = (size - pad * 2) * outerScale;
   const innerSpan = size * 0.34 * innerScale;
@@ -401,21 +604,6 @@ function VisualGrid({ grid, cellSize = 70 }) {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  IQ SCORING
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function getIQScore(correct, total, timeLeft) {
-  const base      = (correct / total) * 100;
-  const timeBonus = timeLeft > 0 ? Math.round((timeLeft / TOTAL_TIME) * 8) : 0;
-  return Math.min(Math.round(70 + (base / 100) * 60 + timeBonus), 145);
-}
-
-function getIQLabel(iq) {
-  if (iq >= 130) return { label: "Gifted / Very Superior" };
-  if (iq >= 120) return { label: "Superior" };
-  if (iq >= 110) return { label: "High Average" };
-  if (iq >= 90)  return { label: "Average" };
-  if (iq >= 80)  return { label: "Low Average" };
-  return           { label: "Below Average" };
-}
-
 function getIQLabelColor(iq) {
   if (iq >= 130) return "#a78bfa";
   if (iq >= 120) return "#60a5fa";
@@ -617,7 +805,7 @@ async function generateVectorPDF(name, iq, label, certID, date, catScores) {
 //  MAIN COMPONENT
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function IQTest() {
-  const [QUESTIONS] = useState(() => pickRandomQuestions());
+  const [QUESTIONS,     setQUESTIONS]     = useState([]);
 
   const [screen,        setScreen]        = useState("intro");
   const [current,       setCurrent]       = useState(0);
@@ -632,6 +820,10 @@ export default function IQTest() {
   const [generating,    setGenerating]    = useState(false);
   const [payLoading,    setPayLoading]    = useState(false);
   const [paymentDebug,  setPaymentDebug]  = useState("");
+  const [attemptToken,  setAttemptToken]  = useState("");
+  const [resultsToken,  setResultsToken]  = useState("");
+  const [resultData,    setResultData]    = useState(null);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
   const [infoPage,      setInfoPage]      = useState({ title: "", description: "" });
   const [docPage,       setDocPage]       = useState({ title: "", items: [] });
   const [kidsGameId,    setKidsGameId]    = useState(null);
@@ -642,48 +834,143 @@ export default function IQTest() {
 
   const timerRef  = useRef(null);
   const canvasRef = useRef(null);
+  const answersRef = useRef({});
 
   useEffect(() => {
-    if (screen === "test") {
+    answersRef.current = answers;
+  }, [answers]);
+
+  const startAssessment = async () => {
+    if (assessmentLoading) return;
+    setAssessmentLoading(true);
+    setPaymentDebug("");
+    try {
+      const { data } = await postApiJson(
+        "/api/test/start",
+        {},
+        undefined,
+        (payload) => {
+          if (!Array.isArray(payload?.questions) || payload.questions.length === 0) {
+            return "Invalid start response: questions missing.";
+          }
+          if (!payload?.attemptToken) {
+            return "Invalid start response: attempt token missing.";
+          }
+          return "";
+        }
+      );
+
+      setQUESTIONS(data.questions);
+      setAttemptToken(data.attemptToken);
+      setResultsToken("");
+      setResultData(null);
+      setCurrent(0);
+      setAnswers({});
+      setSelected(null);
+      setTimeLeft(TOTAL_TIME);
+      setPaid(false);
+      setCertGenerated(false);
+      setCertName("");
+      setShowPaywall(false);
+      setScreen("test");
+    } catch (error) {
+      const message = error?.message || "unknown error";
+      const localHint = message.includes("localhost:8787")
+        ? "\n\nFor local testing, start the backend with `npm run server` or use `npm run dev:local`."
+        : "";
+      alert(`Unable to start assessment. (${message})${localHint}`);
+    } finally {
+      setAssessmentLoading(false);
+    }
+  };
+
+  const submitAssessment = async (finalAnswers, finalTimeUsed) => {
+    if (!attemptToken) {
+      alert("Assessment session is missing. Please restart the test.");
+      handleRetake();
+      return;
+    }
+
+    setAssessmentLoading(true);
+    setPaymentDebug("");
+    try {
+      const { data } = await postApiJson(
+        "/api/test/submit",
+        {
+          attemptToken,
+          answers: finalAnswers,
+          timeUsed: finalTimeUsed,
+        },
+        undefined,
+        (payload) => {
+          if (!payload?.resultsToken) return "Invalid submit response: results token missing.";
+          if (!payload?.catScores) return "Invalid submit response: category scores missing.";
+          return "";
+        }
+      );
+      setResultData(data);
+      setResultsToken(data.resultsToken);
+      setScreen("result");
+    } catch (error) {
+      const message = error?.message || "unknown error";
+      const localHint = message.includes("localhost:8787")
+        ? "\n\nFor local testing, start the backend with `npm run server` or use `npm run dev:local`."
+        : "";
+      alert(`Unable to submit assessment. (${message})${localHint}`);
+      handleRetake();
+    } finally {
+      setAssessmentLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (screen === "test" && QUESTIONS.length > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft(t => {
-          if (t <= 1) { clearInterval(timerRef.current); setScreen("result"); return 0; }
+          if (t <= 1) {
+            clearInterval(timerRef.current);
+            void submitAssessment(answersRef.current, TOTAL_TIME);
+            return 0;
+          }
           return t - 1;
         });
       }, 1000);
     }
     return () => clearInterval(timerRef.current);
-  }, [screen]);
+  }, [screen, QUESTIONS.length, attemptToken]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (selected === null) return;
-    const na = { ...answers, [current]: selected };
+    const questionId = QUESTIONS[current]?.id;
+    const na = { ...answers, [questionId]: selected };
     setAnswers(na); setSelected(null);
-    if (current + 1 >= QUESTIONS.length) { clearInterval(timerRef.current); setScreen("result"); }
-    else setCurrent(c => c + 1);
+    if (current + 1 >= QUESTIONS.length) {
+      clearInterval(timerRef.current);
+      await submitAssessment(na, TOTAL_TIME - timeLeft);
+    } else {
+      setCurrent(c => c + 1);
+    }
   };
 
   const formatTime = s =>
     `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
 
-  const computeResults = () => {
-    let correct = 0;
-    const catScores = {};
-    ALL_CATEGORIES.forEach(c => catScores[c] = { correct:0, total:0 });
-    QUESTIONS.forEach((q,i) => {
-      catScores[q.category].total++;
-      if (answers[i] === q.answer) { correct++; catScores[q.category].correct++; }
-    });
-    return { correct, total:QUESTIONS.length, iq:getIQScore(correct,QUESTIONS.length,timeLeft), catScores, timeUsed:TOTAL_TIME-timeLeft };
-  };
-
   const handleDownloadPDF = async () => {
-    const { iq, catScores } = computeResults();
-    const { label } = getIQLabel(iq);
+    if (!resultData?.finalScore || !resultData?.finalLabel || !resultData?.catScores) {
+      alert("Final results are locked until verified payment is completed.");
+      return;
+    }
     const date = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
     setGenerating(true);
     try {
-      await generateVectorPDF(certName, iq, label, certID, date, catScores);
+      await generateVectorPDF(
+        certName,
+        resultData.finalScore,
+        resultData.finalLabel,
+        certID,
+        date,
+        resultData.catScores
+      );
       setCertGenerated(true);
       if (window.gtag) window.gtag("event","certificate_downloaded",{event_category:"conversion"});
     } finally { setGenerating(false); }
@@ -710,7 +997,7 @@ export default function IQTest() {
         return;
       }
 
-      const { data: orderData, base: activeApiBase } = await postPaymentJson(
+      const { data: orderData, base: activeApiBase } = await postApiJson(
         "/api/payment/create-order",
         { certName: certName.trim() },
         undefined,
@@ -735,12 +1022,13 @@ export default function IQTest() {
         theme: { color: "#2563eb" },
         handler: async (response) => {
           try {
-            const { data: verifyData } = await postPaymentJson(
+            const { data: verifyData } = await postApiJson(
               "/api/payment/verify",
               {
                 orderId: response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
                 signature: response.razorpay_signature,
+                resultsToken,
               },
               activeApiBase,
               (data) => (data?.success ? "" : (data?.error || "Verification failed."))
@@ -749,6 +1037,11 @@ export default function IQTest() {
               alert(verifyData.error || "Payment verification failed.");
               return;
             }
+            if (!verifyData.results?.finalScore) {
+              alert("Payment succeeded, but full results could not be unlocked.");
+              return;
+            }
+            setResultData(verifyData.results);
             setPaid(true);
             setShowPaywall(false);
             alert("Payment verified. Certificate download is unlocked.");
@@ -775,6 +1068,8 @@ export default function IQTest() {
   const handleRetake = () => {
     setScreen("intro"); setCurrent(0); setAnswers({}); setSelected(null);
     setTimeLeft(TOTAL_TIME); setPaid(false); setCertGenerated(false); setCertName(""); setPaymentDebug("");
+    setQUESTIONS([]); setAttemptToken(""); setResultsToken(""); setResultData(null); setShowPaywall(false);
+    setAssessmentLoading(false); setPayLoading(false);
   };
 
   const openKidsZone = () => {
@@ -796,7 +1091,7 @@ export default function IQTest() {
 
   const handleLandingLink = (id) => {
     if (id === "tests") {
-      setScreen("test");
+      void startAssessment();
       return;
     }
     if (id === "games") {
@@ -858,9 +1153,9 @@ export default function IQTest() {
     setScreen("kids_game");
   };
 
-  const progress    = (current / QUESTIONS.length) * 100;
+  const progress    = QUESTIONS.length ? (current / QUESTIONS.length) * 100 : 0;
   const timerUrgent = timeLeft < 120;
-  const q           = QUESTIONS[current];
+  const q           = QUESTIONS[current] || { options: [], question: "", type: "text", category: "" };
 
   const CAT_ICONS = {
     "Logical Reasoning":   "\u{1F517}",
@@ -1077,7 +1372,9 @@ export default function IQTest() {
           {"\u{1F393}"} <strong style={{color:"#fbbf24"}}>Official PDF Certificate</strong> {"\u2014"} Download your verified IQ certificate for {CERT_PRICE}
         </div>
         <div style={S.entryActions}>
-          <button style={S.startBtn} onClick={()=>setScreen("test")}>Begin Assessment</button>
+          <button style={{...S.startBtn, opacity: assessmentLoading ? 0.75 : 1}} onClick={startAssessment} disabled={assessmentLoading}>
+            {assessmentLoading ? "Preparing Assessment..." : "Begin Assessment"}
+          </button>
           <button style={S.kidsEntryBtn} onClick={openKidsZone}>Open Kids Zone (4-8 years)</button>
         </div>
         <div style={S.activitySection}>
@@ -1116,7 +1413,7 @@ export default function IQTest() {
             ))}
           </div>
         </div>
-        <p style={S.disclaimer}>Issued by {AUTHORITY} {"\u00B7"} Questions randomised each session</p>
+        <p style={S.disclaimer}>Issued by {AUTHORITY}</p>
       </div>
     </div>
   );
@@ -1181,15 +1478,20 @@ export default function IQTest() {
         <div style={{display:"flex",gap:12,marginTop:8}}>
           {current > 0 && (
             <button style={S.skipBtn}
-              onClick={()=>{setCurrent(c=>c-1);setSelected(answers[current-1]??null);}}>
+              onClick={()=>{
+                const previousIndex = current - 1;
+                const previousQuestionId = QUESTIONS[previousIndex]?.id;
+                setCurrent(previousIndex);
+                setSelected(previousQuestionId ? (answers[previousQuestionId] ?? null) : null);
+              }}>
               {"\u2190"} Back
             </button>
           )}
           <button
-            style={{...S.nextBtn,opacity:selected===null?0.4:1,flex:1}}
-            disabled={selected===null}
+            style={{...S.nextBtn,opacity:selected===null || assessmentLoading ? 0.4 : 1,flex:1}}
+            disabled={selected===null || assessmentLoading}
             onClick={handleNext}>
-            {current+1===QUESTIONS.length?"Submit Test \u2713":"Next Question \u2192"}
+            {assessmentLoading ? "Submitting..." : (current+1===QUESTIONS.length?"Submit Test \u2713":"Next Question \u2192")}
           </button>
         </div>
       </div>
@@ -1198,39 +1500,95 @@ export default function IQTest() {
 
   // â”€â”€ RESULT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (screen === "result") {
-    const {correct,total,iq,catScores,timeUsed} = computeResults();
-    const {label} = getIQLabel(iq);
-    const color   = getIQLabelColor(iq);
+    if (!resultData) {
+      return (
+        <div style={S.page}>
+          <div style={S.resultCard}>
+            <div style={S.badge}>ASSESSMENT OVERVIEW</div>
+            <div style={S.teaserTitle}>Finalizing your assessment...</div>
+            <p style={S.teaserSubtitle}>We are processing your performance profile securely.</p>
+          </div>
+        </div>
+      );
+    }
+
+    const {correct,total,catScores,timeUsed} = resultData;
+    const paymentStatus = paid ? "paid" : "unpaid";
+    const iq = paymentStatus === "paid" ? resultData.finalScore : null;
+    const label = paymentStatus === "paid" ? resultData.finalLabel : "";
+    const color   = iq !== null ? getIQLabelColor(iq) : "#a78bfa";
     const mins    = Math.floor(timeUsed/60), secs = timeUsed%60;
+    const percentileBand = resultData.percentileBand;
+    const strongestCategory = resultData.strongestCategory;
+    const completionPercent = paymentStatus === "paid" ? 100 : 99;
 
     return (
       <div style={S.page}>
         <div style={S.resultCard}>
-          <div style={S.badge}>YOUR RESULTS</div>
+          <div style={S.badge}>{paymentStatus === "paid" ? "FULL RESULTS" : "ASSESSMENT OVERVIEW"}</div>
 
-          <div style={S.iqRing}>
-            <svg width="160" height="160" viewBox="0 0 160 160">
-              <circle cx="80" cy="80" r="68" fill="none" stroke="#1e1b4b" strokeWidth="12"/>
-              <circle cx="80" cy="80" r="68" fill="none" stroke={color} strokeWidth="12"
-                strokeLinecap="round"
-                strokeDasharray={`${(iq/145)*427} 427`}
-                transform="rotate(-90 80 80)"/>
-            </svg>
-            <div style={S.iqInner}>
-              <div style={{...S.iqNumber,color}}>{iq}</div>
-              <div style={S.iqLabel}>IQ Score</div>
-            </div>
-          </div>
+          {paymentStatus === "paid" ? (
+            <>
+              <div style={S.iqRing}>
+                <svg width="160" height="160" viewBox="0 0 160 160">
+                  <circle cx="80" cy="80" r="68" fill="none" stroke="#1e1b4b" strokeWidth="12"/>
+                  <circle cx="80" cy="80" r="68" fill="none" stroke={color} strokeWidth="12"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(iq/145)*427} 427`}
+                    transform="rotate(-90 80 80)"/>
+                </svg>
+                <div style={S.iqInner}>
+                  <div style={{...S.iqNumber,color}}>{iq}</div>
+                  <div style={S.iqLabel}>IQ Score</div>
+                </div>
+              </div>
 
-          <div style={{...S.levelBadge,background:color+"22",color,border:`1px solid ${color}`}}>{label}</div>
+              <div style={{...S.levelBadge,background:color+"22",color,border:`1px solid ${color}`}}>{label}</div>
 
-          <div style={S.statsRow}>
-            <div style={S.statBox}><span style={S.statNum}>{correct}/{total}</span><span style={S.statLabel}>Correct</span></div>
-            <div style={S.statBox}><span style={S.statNum}>{Math.round((correct/total)*100)}%</span><span style={S.statLabel}>Accuracy</span></div>
-            <div style={S.statBox}><span style={S.statNum}>{mins}m {secs}s</span><span style={S.statLabel}>Time</span></div>
-          </div>
+              <div style={S.statsRow}>
+                <div style={S.statBox}><span style={S.statNum}>{correct}/{total}</span><span style={S.statLabel}>Correct</span></div>
+                <div style={S.statBox}><span style={S.statNum}>{Math.round((correct/total)*100)}%</span><span style={S.statLabel}>Accuracy</span></div>
+                <div style={S.statBox}><span style={S.statNum}>{mins}m {secs}s</span><span style={S.statLabel}>Time</span></div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={S.teaserHeader}>
+                <div style={S.teaserTitleBlock}>
+                <div style={S.teaserTitle}>Performance Profile</div>
+                <div style={S.teaserSubtitle}>Your assessment is complete. Unlock your exact score, full interpretation, and certificate.</div>
+                </div>
+                <div style={S.teaserBand}>{percentileBand}</div>
+              </div>
 
-          <div style={S.breakdownTitle}>Category Breakdown</div>
+              <div style={S.unlockProgressCard}>
+                <div style={S.unlockProgressTop}>
+                  <span>Complete your profile to unlock</span>
+                  <strong>{completionPercent}%</strong>
+                </div>
+                <div style={S.unlockProgressBg}>
+                  <div style={{...S.unlockProgressFill,width:`${completionPercent}%`}} />
+                </div>
+              </div>
+
+              <div style={S.teaserStatsRow}>
+                <div style={S.teaserStatBox}>
+                  <span style={S.teaserStatLabel}>Strongest Area</span>
+                  <strong style={S.teaserStatValue}>{strongestCategory ? strongestCategory.category : "In Progress"}</strong>
+                </div>
+                <div style={S.teaserStatBox}>
+                  <span style={S.teaserStatLabel}>Profile Accuracy</span>
+                  <strong style={S.teaserStatValue}>{total ? Math.round((correct/total)*100) : 0}%</strong>
+                </div>
+                <div style={S.teaserStatBox}>
+                  <span style={S.teaserStatLabel}>Time Used</span>
+                  <strong style={S.teaserStatValue}>{mins}m {secs}s</strong>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div style={S.breakdownTitle}>{paymentStatus === "paid" ? "Category Breakdown" : "Performance Profile"}</div>
           {ALL_CATEGORIES.map(cat => {
             const s=catScores[cat]; if(!s) return null;
             const pct=s.total>0?Math.round((s.correct/s.total)*100):0;
@@ -1238,36 +1596,66 @@ export default function IQTest() {
               <div key={cat} style={S.catRow}>
                 <div style={S.catRowLeft}><span>{CAT_ICONS[cat]}</span><span style={S.catRowName}>{cat}</span></div>
                 <div style={S.catBarBg}><div style={{...S.catBarFill,width:`${pct}%`,background:pct>=75?"#34d399":pct>=50?"#fbbf24":"#f87171"}}/></div>
-                <span style={S.catPct}>{s.correct}/{s.total}</span>
+                <span style={S.catPct}>{pct}%</span>
               </div>
             );
           })}
 
-          <div style={S.certSection}>
-            <div style={S.certHeader}>
-              <span style={{fontSize:28}}>{"\u{1F393}"}</span>
-              <div>
-                <div style={S.certTitle}>Official PDF Certificate</div>
-                <div style={S.certSubtitle}>Vector quality {"\u00B7"} Never blurs when zoomed</div>
+          {paymentStatus !== "paid" ? (
+            <div style={S.teaserGrid}>
+              <div style={S.lockedScoreCard}>
+                <div style={S.lockedHeader}>
+                  <span>Final Score</span>
+                  <span style={S.lockedPill}>Locked</span>
+                </div>
+                <div style={S.lockedScoreBlur}>###</div>
+                <div style={S.lockedMeta}>Unlock your official percentile, score band, and detailed interpretation.</div>
               </div>
-              <div style={S.certPrice}>{CERT_PRICE}</div>
-            </div>
-            <div style={S.certFeatures}>
-              {["NeuroMark design","Name & IQ score","Cognitive profile bars","Instant PDF"].map(f=>(
-                <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>{"\u2713"}</span> {f}</div>
-              ))}
-            </div>
-            {!paid ? (
-              <>
-                <input style={S.nameInput}
+
+              <div style={S.certificateTeaserCard}>
+                <div style={S.lockedHeader}>
+                  <span>Certificate Preview</span>
+                  <span style={S.lockedPill}>Locked</span>
+                </div>
+                <div style={S.certificateTeaserFrame}>
+                  <div style={S.certificateTeaserName}>{certName.trim() || "Your Name Here"}</div>
+                  <div style={S.certificateTeaserBlur}>Score and seal unlock after payment</div>
+                  <div style={S.certificateTeaserFooter}>Verifiable PDF certificate</div>
+                </div>
+              </div>
+
+              <div style={S.ctaCard}>
+                <div style={S.ctaEyebrow}>Official unlock</div>
+                <div style={S.ctaTitle}>Claim Your Official Certification</div>
+                <div style={S.ctaText}>You&apos;ve completed the assessment. Pay just {CERT_PRICE} to unlock your final score, detailed feedback, and download your verifiable PDF certificate.</div>
+                <input
+                  style={S.nameInput}
                   placeholder="Enter your full name for the certificate"
-                  value={certName} onChange={e=>setCertName(e.target.value)} maxLength={40}/>
+                  value={certName}
+                  onChange={e=>setCertName(e.target.value)}
+                  maxLength={40}
+                />
                 <button style={S.certBtn} onClick={()=>{if(certName.trim()){setPaymentDebug("");setShowPaywall(true);}}}>
-                  {"\u{1F3C6}"} Get My Certificate {"\u2014"} {CERT_PRICE}
+                  Unlock Full Results ({CERT_PRICE})
                 </button>
                 {!certName.trim()&&<p style={{color:"#64748b",fontSize:11,margin:"6px 0 0",textAlign:"center"}}>Enter your name above to continue</p>}
-              </>
-            ):(
+              </div>
+            </div>
+          ) : (
+            <div style={S.certSection}>
+              <div style={S.certHeader}>
+                <span style={{fontSize:28}}>{"\u{1F393}"}</span>
+                <div>
+                  <div style={S.certTitle}>Official PDF Certificate</div>
+                  <div style={S.certSubtitle}>Vector quality {"\u00B7"} Never blurs when zoomed</div>
+                </div>
+                <div style={S.certPrice}>{CERT_PRICE}</div>
+              </div>
+              <div style={S.certFeatures}>
+                {["NeuroMark design","Name & IQ score","Cognitive profile bars","Instant PDF"].map(f=>(
+                  <div key={f} style={S.certFeature}><span style={{color:"#fbbf24"}}>{"\u2713"}</span> {f}</div>
+                ))}
+              </div>
               <div style={{textAlign:"center"}}>
                 <button style={{...S.certBtn,background:"linear-gradient(135deg,#059669,#34d399)",opacity:generating?0.7:1}}
                   onClick={handleDownloadPDF} disabled={generating}>
@@ -1275,21 +1663,20 @@ export default function IQTest() {
                 </button>
                 {certGenerated&&<p style={{color:"#34d399",fontSize:12,marginTop:8}}>{"\u2705"} Certificate downloaded! {"\u{1F389}"}</p>}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {showPaywall&&(
             <div style={S.modal}>
               <div style={S.modalCard}>
                 <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>{"\u{1F3C6}"}</div>
-                <div style={S.modalTitle}>Complete Your Certificate</div>
+                <div style={S.modalTitle}>Claim Your Official Certification</div>
                 <div style={S.modalName}>{certName}</div>
-                <div style={S.modalIQ}>IQ Score: <strong style={{color:"#a78bfa"}}>{iq}</strong> {"\u2014"} {label}</div>
                 <div style={S.modalPrice}>{CERT_PRICE} only</div>
-                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>One-time {"\u00B7"} Instant PDF {"\u00B7"} No subscription</p>
-                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>{"\u{1F525}"} 50+ people downloaded today</p>
+                <p style={{color:"#94a3b8",fontSize:12,textAlign:"center",margin:"0 0 8px"}}>Pay just {CERT_PRICE} to unlock your final score, detailed feedback, and downloadable PDF certificate.</p>
+                <p style={{textAlign:"center",color:"#34d399",fontSize:12,marginBottom:16}}>{percentileBand} {"\u00B7"} Full profile ready to unlock</p>
                 <button style={{...S.payBtn,opacity:payLoading?0.7:1}} onClick={handleRazorpayPayment} disabled={payLoading}>
-                  {payLoading ? "Starting secure payment..." : `Pay ${CERT_PRICE}`}
+                  {payLoading ? "Starting secure payment..." : `Unlock Full Results (${CERT_PRICE})`}
                 </button>
                 <button style={S.cancelBtn} onClick={()=>{setPaymentDebug("");setShowPaywall(false);}}>Cancel</button>
                 <p style={{color:"#94a3b8",fontSize:11,textAlign:"center",marginTop:8}}>Certificate unlock requires successful verified payment.</p>
@@ -1302,7 +1689,7 @@ export default function IQTest() {
           )}
 
           <button style={{...S.startBtn,marginTop:16}} onClick={handleRetake}>
-            Retake Test {"\u21BA"} {"\u00B7"} Refresh page for new questions
+            Retake Test {"\u21BA"}
           </button>
         </div>
         <canvas ref={canvasRef} style={{display:"none"}}/>
@@ -1405,6 +1792,19 @@ const S = {
   nextBtn:        { padding:"14px", background:"linear-gradient(135deg,#7c3aed,#a78bfa)", color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:700, cursor:"pointer" },
   skipBtn:        { padding:"14px 20px", background:"rgba(255,255,255,0.06)", color:"#94a3b8", border:"1px solid rgba(255,255,255,0.1)", borderRadius:12, fontSize:14, cursor:"pointer", fontFamily:"'Georgia',serif" },
   resultCard:     { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(167,139,250,0.2)", borderRadius:24, padding:"40px 36px", maxWidth:580, width:"100%", backdropFilter:"blur(20px)", textAlign:"center" },
+  teaserHeader:   { display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, marginBottom:18, textAlign:"left", flexWrap:"wrap" },
+  teaserTitleBlock:{ flex:1, minWidth:220 },
+  teaserTitle:    { color:"#f8fafc", fontSize:28, fontWeight:800, lineHeight:1.05, marginBottom:6 },
+  teaserSubtitle: { color:"#94a3b8", fontSize:14, lineHeight:1.6 },
+  teaserBand:     { background:"rgba(16,185,129,0.12)", color:"#6ee7b7", border:"1px solid rgba(110,231,183,0.3)", borderRadius:999, padding:"8px 14px", fontSize:12, fontWeight:700, whiteSpace:"nowrap" },
+  unlockProgressCard:{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:16, padding:"14px 16px", marginBottom:18, textAlign:"left" },
+  unlockProgressTop:{ display:"flex", justifyContent:"space-between", alignItems:"center", color:"#e2e8f0", fontSize:13, marginBottom:8 },
+  unlockProgressBg:{ height:10, background:"rgba(255,255,255,0.08)", borderRadius:999, overflow:"hidden" },
+  unlockProgressFill:{ height:"100%", background:"linear-gradient(90deg,#7c3aed,#fbbf24)", borderRadius:999 },
+  teaserStatsRow: { display:"grid", gridTemplateColumns:"repeat(3, minmax(0,1fr))", gap:10, marginBottom:22 },
+  teaserStatBox:  { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"14px 12px", textAlign:"left" },
+  teaserStatLabel:{ color:"#64748b", fontSize:10, letterSpacing:1, fontFamily:"monospace", display:"block", marginBottom:6, textTransform:"uppercase" },
+  teaserStatValue:{ color:"#f8fafc", fontSize:15, lineHeight:1.4 },
   iqRing:         { position:"relative", width:160, height:160, margin:"24px auto 16px" },
   iqInner:        { position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)" },
   iqNumber:       { fontSize:40, fontWeight:900, lineHeight:1 },
@@ -1422,6 +1822,21 @@ const S = {
   catBarFill:     { height:"100%", borderRadius:100, transition:"width 1s ease" },
   catPct:         { color:"#64748b", fontSize:12, fontFamily:"monospace", width:32 },
   certSection:    { background:"rgba(251,191,36,0.06)", border:"1px solid rgba(251,191,36,0.25)", borderRadius:20, padding:"24px", marginTop:24, textAlign:"left" },
+  teaserGrid:     { display:"grid", gap:14, marginTop:22 },
+  lockedScoreCard:{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, padding:"18px 18px 20px", textAlign:"left" },
+  lockedHeader:   { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14, color:"#f8fafc", fontSize:15, fontWeight:700 },
+  lockedPill:     { background:"rgba(251,191,36,0.14)", color:"#fbbf24", border:"1px solid rgba(251,191,36,0.28)", borderRadius:999, padding:"4px 10px", fontSize:10, fontFamily:"monospace", letterSpacing:1, textTransform:"uppercase" },
+  lockedScoreBlur:{ fontSize:44, fontWeight:900, color:"#e2e8f0", letterSpacing:4, filter:"blur(7px)", userSelect:"none", marginBottom:8 },
+  lockedMeta:     { color:"#94a3b8", fontSize:13, lineHeight:1.6 },
+  certificateTeaserCard:{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, padding:"18px", textAlign:"left" },
+  certificateTeaserFrame:{ borderRadius:16, background:"linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04))", border:"1px solid rgba(255,255,255,0.08)", padding:"18px", minHeight:140, display:"flex", flexDirection:"column", justifyContent:"space-between" },
+  certificateTeaserName:{ color:"#f8fafc", fontSize:22, fontWeight:700 },
+  certificateTeaserBlur:{ color:"#f1f5f9", fontSize:18, fontWeight:800, filter:"blur(6px)", userSelect:"none", alignSelf:"flex-start" },
+  certificateTeaserFooter:{ color:"#94a3b8", fontSize:12 },
+  ctaCard:        { background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.22)", borderRadius:20, padding:"22px", textAlign:"left" },
+  ctaEyebrow:     { color:"#fbbf24", fontSize:11, letterSpacing:1.5, fontFamily:"monospace", textTransform:"uppercase", marginBottom:8 },
+  ctaTitle:       { color:"#f8fafc", fontSize:24, fontWeight:800, lineHeight:1.1, marginBottom:8 },
+  ctaText:        { color:"#cbd5e1", fontSize:14, lineHeight:1.65, marginBottom:14 },
   certHeader:     { display:"flex", alignItems:"center", gap:12, marginBottom:16 },
   certTitle:      { color:"#fbbf24", fontWeight:700, fontSize:16 },
   certSubtitle:   { color:"#94a3b8", fontSize:12 },
